@@ -72,7 +72,8 @@ public final class Card
 
     public static Card decode(List<String> data)
     {
-        return new Card(Card.VALUE.valueOf(data.get(0)), Card.SUIT.valueOf(data.get(1)));
+        return new Card(Card.VALUE.valueOf(data.get(0)), Card.SUIT.valueOf(data
+                .get(1)));
     }
 
     public static List<String> encodeCards(List<Card> cards)

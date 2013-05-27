@@ -120,7 +120,8 @@ public class Server
                 game.startRound();
                 announce(data);
             }
-        } else if (data[0].equals("SHOW"))
+        }
+        else if (data[0].equals("SHOW"))
         {
             /* SHOW [cards] */
             Play play = new Play(player.ID, Card.decodeCards(Arrays

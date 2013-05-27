@@ -194,7 +194,8 @@ public class Game
         {
             /* All cards must be same suit */
             return suit(play) != null;
-        } else
+        }
+        else
         {
             /* Must have same number of cards */
             Play startingPlay = currentTrick.getPlays().get(0);
@@ -322,7 +323,8 @@ public class Game
         do
         {
             masterIndex = (masterIndex + 1) % players.size();
-        } while (teams.get(players.get(masterIndex).ID) != winningTeam);
+        }
+        while (teams.get(players.get(masterIndex).ID) != winningTeam);
 
         /* Increment scores */
         for (Player player : players)

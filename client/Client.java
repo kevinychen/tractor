@@ -51,7 +51,8 @@ public abstract class Client
                 {
                     while (true)
                         processMessage(parse(in.readLine()));
-                } catch (IOException e)
+                }
+                catch (IOException e)
                 {
                     System.out.println("Socket connection closed.");
                     e.printStackTrace();
@@ -85,7 +86,8 @@ public abstract class Client
             args.add("SHOW");
             args.addAll(Card.encodeCards(cards));
             request(args.toArray(new String[0]));
-        } else
+        }
+        else
         {
             showNotification("Invalid show.");
         }
@@ -108,7 +110,8 @@ public abstract class Client
             args.add("PLAY");
             args.addAll(Card.encodeCards(cards));
             request(args.toArray(new String[0]));
-        } else
+        }
+        else
         {
             showNotification("Invalid play.");
         }
