@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import model.Card.SUIT;
 import model.Card.VALUE;
@@ -94,7 +95,7 @@ public class Game
         return Card.values[playerScores.get(players.get(masterIndex).ID)];
     }
 
-    public void startRound()
+    public void startRound(long randomSeed)
     {
         /* make deck */
         deck = new ArrayList<Card>();
@@ -106,7 +107,7 @@ public class Game
             deck.add(new Card(Card.VALUE.SMALL_JOKER, Card.SUIT.TRUMP));
             deck.add(new Card(Card.VALUE.BIG_JOKER, Card.SUIT.TRUMP));
         }
-        Collections.shuffle(deck);
+        Collections.shuffle(deck, new Random(randomSeed));
 
         /* initialize other variables */
         playerIndex = masterIndex;
@@ -120,14 +121,14 @@ public class Game
         lastWinningPlay = null;
     }
 
-    public boolean canDrawFromDeck(Player player)
+    public boolean canDrawFromDeck(int playerID)
     {
-        return !deck.isEmpty() && players.get(playerIndex) == player;
+        return !deck.isEmpty() && players.get(playerIndex).ID == playerID;
     }
 
-    public void drawFromDeck(Player player)
+    public void drawFromDeck(int playerID)
     {
-        hands.get(player.ID).addCard(deck.remove(deck.size() - 1));
+        hands.get(playerID).addCard(deck.remove(deck.size() - 1));
         playerIndex = (playerIndex + 1) % players.size();
 
         /* At some point, give the remaining cards to the master */
@@ -246,6 +247,15 @@ public class Game
         return true;
     }
 
+    public Card minCard(Play play)
+    {
+        Card minCard = play.getCards().get(0);
+        for (Card card : play.getCards())
+            if (cardRank(card) < cardRank(minCard))
+                minCard = card;
+        return minCard;
+    }
+
     public void play(Play play)
     {
         Trick currentTrick = tricks.get(tricks.size() - 1);
@@ -306,15 +316,6 @@ public class Game
                 - Math.round((float) (totalNumCards - 7) / players.size())
                 * players.size();
         return (kittySize <= 4 ? kittySize + players.size() : kittySize);
-    }
-
-    private Card minCard(Play play)
-    {
-        Card minCard = play.getCards().get(0);
-        for (Card card : play.getCards())
-            if (cardRank(card) < cardRank(minCard))
-                minCard = card;
-        return minCard;
     }
 
     private void incrementPlayerScores(int winningTeam, int dScore)

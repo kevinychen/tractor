@@ -63,12 +63,14 @@ public class Server
                                     while (true)
                                         processMessage(player,
                                                 parse(in.readLine()));
-                                } catch (Exception e)
+                                }
+                                catch (Exception e)
                                 {
                                     System.out.println("Connection with "
                                             + player + " broken");
                                     e.printStackTrace();
-                                } finally
+                                }
+                                finally
                                 {
                                     if (player != null)
                                     {
@@ -86,7 +88,8 @@ public class Server
                                         || !decoded[0].equals("HELLO"))
                                 {
                                     return null;
-                                } else
+                                }
+                                else
                                 {
                                     return new Player(currentPlayerID++,
                                             decoded[1]);
@@ -94,7 +97,8 @@ public class Server
                             }
                         }.start();
                     }
-                } catch (IOException e)
+                }
+                catch (IOException e)
                 {
                     System.out.println("Server error.");
                     e.printStackTrace();
@@ -105,36 +109,69 @@ public class Server
 
     protected void processMessage(Player player, String... data)
     {
-        if (data[0].equals("STARTGAME"))
+        String command = data[0];
+        List<String> params = Arrays.asList(data).subList(1, data.length);
+
+        if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
-            game = new Game(GameProperties.decode(Arrays.asList(data).subList(
-                    1, data.length)));
+            game = new Game(GameProperties.decode(params));
             announce(data);
             // TODO ask other players to verify?
-        } else if (data[0].equals("STARTROUND"))
+        }
+        else if (command.equals("STARTROUND"))
         {
             /* STARTROUND */
             if (game.canStartNewRound())
             {
-                game.startRound();
-                announce(data);
+                long randomSeed = System.currentTimeMillis();
+                game.startRound(randomSeed);
+                announce(command, Long.toString(randomSeed));
             }
+            // TODO ask other players to verify?
         }
-        else if (data[0].equals("SHOW"))
+        else
         {
-            /* SHOW [cards] */
-            Play play = new Play(player.ID, Card.decodeCards(Arrays
-                    .asList(data).subList(1, data.length)));
-            if (game.canShowCards(play))
+            Play play = new Play(player.ID, Card.decodeCards(params));
+            if (command.equals("SHOW"))
             {
-                game.showCards(play);
-                List<String> args = new ArrayList<String>(Arrays.asList(Integer
-                        .toString(player.ID)));
-                args.addAll(Arrays.asList(data));
-                announce(args.toArray(new String[0]));
+                /* SHOW [cards] */
+                if (game.canShowCards(play))
+                {
+                    game.showCards(play);
+                    announce(buildMessage(command, player, params));
+                }
+            }
+            else if (command.equals("MAKEKITTY"))
+            {
+                /* MAKEKITTY [cards] */
+                game.makeKitty(play);
+                announce(buildMessage(command, player, params));
+            }
+            else if (command.equals("PLAY"))
+            {
+                /* PLAY [cards] */
+                if (game.isSpecialPlay(play) && !game.allowedSpecialPlay(play))
+                {
+                    message(player, "NOTIFICATION", "Invalid special play.");
+                    Card minCard = game.minCard(play);
+                    play = new Play(player.ID, Arrays.asList(minCard));
+                }
+                game.play(play);
+                announce(buildMessage(command, player,
+                        Card.encodeCards(play.getCards())));
             }
         }
+    }
+
+    protected String[] buildMessage(String command, Player player,
+            List<String> data)
+    {
+        List<String> args = new ArrayList<String>();
+        args.add(command);
+        args.add(Integer.toString(player.ID));
+        args.addAll(data);
+        return args.toArray(new String[0]);
     }
 
     protected void message(Player player, String... args)
@@ -159,5 +196,4 @@ public class Server
             decoded[i] = data[i].replace("\1", " ");
         return decoded;
     }
-
 }

@@ -18,12 +18,12 @@ import model.Player;
 
 public abstract class Client
 {
-    private String name;
+    protected String name;
 
     private PrintWriter out;
 
-    private Game game;
-    private Player me;
+    protected Game game;
+    protected Player me;
 
     public Client(String name)
     {
@@ -68,8 +68,7 @@ public abstract class Client
 
     public void startGame(GameProperties properties)
     {
-        game = new Game(properties);
-        request("STARTGAME");
+        request(makeRequest("STARTGAME", properties.encode()));
     }
 
     public void startRound()
@@ -82,10 +81,7 @@ public abstract class Client
         Play play = new Play(me.ID, cards);
         if (game.canShowCards(play))
         {
-            List<String> args = new ArrayList<String>();
-            args.add("SHOW");
-            args.addAll(Card.encodeCards(cards));
-            request(args.toArray(new String[0]));
+            request(makeRequest("SHOW", Card.encodeCards(cards)));
         }
         else
         {
@@ -126,6 +122,14 @@ public abstract class Client
     protected String getName()
     {
         return name;
+    }
+
+    protected String[] makeRequest(String command, List<String> data)
+    {
+        List<String> args = new ArrayList<String>();
+        args.add(command);
+        args.addAll(data);
+        return args.toArray(new String[0]);
     }
 
     protected void request(String... args)
