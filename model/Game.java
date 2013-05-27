@@ -23,6 +23,9 @@ public class Game
 
     private List<Card> deck;
 
+    /* index of current card drawer / current card player */
+    private int playerIndex;
+
     /* declared cards */
     private Play shownCards;
 
@@ -48,6 +51,7 @@ public class Game
     {
         this.players = new ArrayList<Player>();
         this.numDecks = numDecks;
+        this.playerIndex = 0;
         this.playerScores = new HashMap<Integer, Integer>();
         this.masterIndex = 0;
         this.hands = new HashMap<Integer, Hand>();
@@ -105,6 +109,7 @@ public class Game
         Collections.shuffle(deck);
 
         /* initialize other variables */
+        playerIndex = masterIndex;
         shownCards = null;
         kitty = null;
         hands.clear();
@@ -115,14 +120,47 @@ public class Game
         lastWinningPlay = null;
     }
 
+    public boolean canDrawFromDeck(Player player)
+    {
+        return !deck.isEmpty() && players.get(playerIndex) == player;
+    }
+
     public void drawFromDeck(Player player)
     {
         hands.get(player.ID).addCard(deck.remove(deck.size() - 1));
+        playerIndex = (playerIndex + 1) % players.size();
+
+        /* At some point, give the remaining cards to the master */
+        if (deck.size() == kittySize())
+            while (!deck.isEmpty())
+                hands.get(players.get(masterIndex).ID).addCard(
+                        deck.remove(deck.size() - 1));
     }
 
     public Play getShownCards()
     {
         return shownCards;
+    }
+
+    public boolean canShowCards(Play cards)
+    {
+        Card firstCard = cards.getCards().get(0);
+        for (Card card : cards.getCards())
+        {
+            if (card.value != getTrumpValue()
+                    && card.value != Card.VALUE.BIG_JOKER)
+                return false;
+            else if (!card.equals(firstCard))
+                return false;
+        }
+        if (firstCard.value == Card.VALUE.BIG_JOKER
+                && cards.numCards() < shownCards.numCards())
+            return false;
+        else if (firstCard.value != Card.VALUE.BIG_JOKER
+                && cards.numCards() <= shownCards.numCards())
+            return false;
+        else
+            return true;
     }
 
     public void showCards(Play cards)
@@ -147,6 +185,31 @@ public class Game
     {
         kitty = cards;
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
+    }
+
+    public boolean canPlay(Play play)
+    {
+        Trick currentTrick = tricks.get(tricks.size() - 1);
+        if (currentTrick.getPlays().isEmpty())
+        {
+            /* All cards must be same suit */
+            return suit(play) != null;
+        } else
+        {
+            /* Must follow along starting suit, if possible */
+            Card.SUIT startingSuit = suit(currentTrick.getPlays().get(0));
+            List<Card> cards = play.getCards();
+            boolean hasAnotherSuit = false;
+            for (Card card : cards)
+                if (suit(card) != startingSuit)
+                    hasAnotherSuit = true;
+            if (hasAnotherSuit)
+                for (Card card : hands.get(play.getPlayerID())
+                        .getCardsAfterPlay(cards))
+                    if (suit(card) == startingSuit && !cards.contains(card))
+                        return false;
+            return true;
+        }
     }
 
     public void play(Play play)
@@ -182,6 +245,15 @@ public class Game
             incrementPlayerScores(1, 1);
         else
             incrementPlayerScores(0, 1);
+    }
+
+    private int kittySize()
+    {
+        int totalNumCards = numDecks * 54;
+        int kittySize = totalNumCards
+                - Math.round((float) (totalNumCards - 7) / players.size())
+                * players.size();
+        return (kittySize <= 4 ? kittySize + players.size() : kittySize);
     }
 
     private void incrementPlayerScores(int winningTeam, int dScore)

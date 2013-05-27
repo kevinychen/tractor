@@ -10,15 +10,18 @@ public class Play
 
     public Play(int playerID, List<Card> cards)
     {
+        if (cards.isEmpty())
+            throw new IllegalStateException("Play must have at least one card");
+
         this.playerID = playerID;
         this.cards = Collections.unmodifiableList(cards);
     }
-    
+
     public int getPlayerID()
     {
         return playerID;
     }
-    
+
     public List<Card> getCards()
     {
         return cards;
@@ -30,24 +33,24 @@ public class Play
     }
 
     public int numPoints()
-	{
-		int numPoints = 0;
-		for (Card card : cards)
-			switch (card.value)
-			{
-				case FIVE:
-					numPoints += 5;
-					break;
-				case TEN:
-					numPoints += 10;
-					break;
-				case KING:
-				    numPoints += 10;
-				    break;
-				default:
-				    break;
-			}
-		return numPoints;
-	}
+    {
+        int numPoints = 0;
+        for (Card card : cards)
+            switch (card.value)
+            {
+                case FIVE:
+                    numPoints += 5;
+                    break;
+                case TEN:
+                    numPoints += 10;
+                    break;
+                case KING:
+                    numPoints += 10;
+                    break;
+                default:
+                    break;
+            }
+        return numPoints;
+    }
 
 }
