@@ -32,7 +32,7 @@ public abstract class Client
 
     /**
      * Connects to the server at the specified port and address.
-     *
+     * 
      * @throws IOException
      */
     public void connect(int port, byte[] address) throws IOException
@@ -50,14 +50,7 @@ public abstract class Client
                 try
                 {
                     while (true)
-                    {
-                        String line = in.readLine();
-                        String[] data = line.split(" ");
-                        String[] decoded = new String[data.length];
-                        for (int i = 0; i < data.length; i++)
-                            decoded[i] = data[i].replace("\1", " ");
-                        processMessage(decoded);
-                    }
+                        processMessage(parse(in.readLine()));
                 } catch (IOException e)
                 {
                     System.out.println("Socket connection closed.");
@@ -137,6 +130,15 @@ public abstract class Client
         for (String arg : args)
             out.print(arg.replace(" ", "\1") + " ");
         out.println();
+    }
+
+    protected String[] parse(String line)
+    {
+        String[] data = line.split(" ");
+        String[] decoded = new String[data.length];
+        for (int i = 0; i < data.length; i++)
+            decoded[i] = data[i].replace("\1", " ");
+        return decoded;
     }
 
     /**

@@ -10,4 +10,10 @@ public final class Player
 		this.ID = ID;
 		this.name = name;
 	}
+
+    @Override
+    public String toString()
+    {
+        return "Player [ID=" + ID + ", name=" + name + "]";
+    }
 }

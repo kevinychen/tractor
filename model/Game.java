@@ -261,6 +261,15 @@ public class Game
         }
     }
 
+    public boolean canStartNewRound()
+    {
+        for (Hand hand : hands.values())
+            if (!hand.getCards().isEmpty())
+                return false;
+
+        return true;
+    }
+
     public void endRound()
     {
         /* Add points from kitty, doubled */
@@ -278,6 +287,15 @@ public class Game
             incrementPlayerScores(1, 1);
         else
             incrementPlayerScores(0, 1);
+    }
+
+    public List<Player> getWinners()
+    {
+        List<Player> winners = new ArrayList<Player>();
+        for (Player player : players)
+            if (playerScores.get(player.ID) > Card.VALUE.ACE.ordinal())
+                winners.add(player);
+        return winners;
     }
 
     private int kittySize()
