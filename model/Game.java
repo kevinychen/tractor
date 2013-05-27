@@ -13,7 +13,7 @@ public class Game
 {
     private final List<Player> players;
 
-    private int numDecks;
+    private GameProperties properties;
 
     /* A map from playerID to total game score */
     private final Map<Integer, Integer> playerScores;
@@ -47,10 +47,10 @@ public class Game
     /* Last winning play */
     private Play lastWinningPlay;
 
-    public Game(int numDecks)
+    public Game(GameProperties properties)
     {
         this.players = new ArrayList<Player>();
-        this.numDecks = numDecks;
+        this.properties = properties;
         this.playerIndex = 0;
         this.playerScores = new HashMap<Integer, Integer>();
         this.masterIndex = 0;
@@ -98,7 +98,7 @@ public class Game
     {
         /* make deck */
         deck = new ArrayList<Card>();
-        for (int deckNum = 0; deckNum < numDecks; deckNum++)
+        for (int deckNum = 0; deckNum < properties.numDecks; deckNum++)
         {
             for (VALUE value : Card.values)
                 for (SUIT suit : Card.suits)
@@ -274,7 +274,7 @@ public class Game
         for (Player player : players)
             if (teams.get(player.ID) == 1)
                 totalScore += currentScores.get(player.ID);
-        if (totalScore >= 40 * numDecks)
+        if (totalScore >= 40 * properties.numDecks)
             incrementPlayerScores(1, 1);
         else
             incrementPlayerScores(0, 1);
@@ -282,7 +282,7 @@ public class Game
 
     private int kittySize()
     {
-        int totalNumCards = numDecks * 54;
+        int totalNumCards = properties.numDecks * 54;
         int kittySize = totalNumCards
                 - Math.round((float) (totalNumCards - 7) / players.size())
                 * players.size();
