@@ -196,8 +196,13 @@ public class Game
             return suit(play) != null;
         } else
         {
+            /* Must have same number of cards */
+            Play startingPlay = currentTrick.getPlays().get(0);
+            if (play.numCards() != startingPlay.numCards())
+                return false;
+
             /* Must follow along starting suit, if possible */
-            Card.SUIT startingSuit = suit(currentTrick.getPlays().get(0));
+            Card.SUIT startingSuit = suit(startingPlay);
             List<Card> cards = play.getCards();
             boolean hasAnotherSuit = false;
             for (Card card : cards)
@@ -210,6 +215,34 @@ public class Game
                         return false;
             return true;
         }
+    }
+
+    public boolean isSpecialPlay(Play play)
+    {
+        if (play.numCards() == 1)
+            return false;
+
+        List<int[]> profile = getProfile(play.getCards());
+        boolean[] partOfProfile = new boolean[play.numCards()];
+        for (int[] constraint : profile)
+            partOfProfile[constraint[0]] = partOfProfile[constraint[1]] = true;
+        for (boolean isPartOfProfile : partOfProfile)
+            if (!isPartOfProfile)
+                return false;
+
+        return true;
+    }
+
+    public boolean allowedSpecialPlay(Play play)
+    {
+        Card minCard = minCard(play);
+        for (int playerID : hands.keySet())
+            if (playerID != play.getPlayerID())
+                for (Card card : hands.get(playerID).getCards())
+                    if (cardRank(card) > cardRank(minCard))
+                        return false;
+
+        return true;
     }
 
     public void play(Play play)
@@ -254,6 +287,15 @@ public class Game
                 - Math.round((float) (totalNumCards - 7) / players.size())
                 * players.size();
         return (kittySize <= 4 ? kittySize + players.size() : kittySize);
+    }
+
+    private Card minCard(Play play)
+    {
+        Card minCard = play.getCards().get(0);
+        for (Card card : play.getCards())
+            if (cardRank(card) < cardRank(minCard))
+                minCard = card;
+        return minCard;
     }
 
     private void incrementPlayerScores(int winningTeam, int dScore)
@@ -372,6 +414,12 @@ public class Game
 
     private boolean beats(List<Card> cards, Play bestPlay)
     {
+        /* A mixture of suits never beats anything */
+        if (suit(new Play(-1, cards)) == null)
+            return false;
+
+        /* Check that each corresponding card is better */
+        boolean strictlyBeat = false;
         for (int i = 0; i < cards.size(); i++)
         {
             Card card1 = cards.get(i);
@@ -380,8 +428,10 @@ public class Game
             int score2 = (isTrump(card2) ? 100 : 0) + cardRank(card2);
             if (score1 < score2)
                 return false;
+            else if (score1 > score2)
+                strictlyBeat = true;
         }
-        return true;
+        return strictlyBeat;
     }
 
     private int cardRank(Card card)
