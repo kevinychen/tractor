@@ -3,6 +3,10 @@ package model;
 import static model.Card.SUIT.*;
 import static model.Card.VALUE.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public final class Card
 {
 	public enum VALUE
@@ -52,5 +56,39 @@ public final class Card
         if (value != other.value)
             return false;
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Card [value=" + value + ", suit=" + suit + "]";
+    }
+
+    /* Encode and decode methods for cards */
+    public List<String> encode()
+    {
+        return Arrays.asList(value.toString(), suit.toString());
+    }
+
+    public static Card decode(List<String> data)
+    {
+        return new Card(Card.VALUE.valueOf(data.get(0)), Card.SUIT.valueOf(data.get(1)));
+    }
+
+    public static List<String> encodeCards(List<Card> cards)
+    {
+        List<String> data = new ArrayList<String>();
+        data.add(Integer.toString(cards.size()));
+        for (Card card : cards)
+            data.addAll(card.encode());
+        return data;
+    }
+
+    public static List<Card> decodeCards(List<String> data)
+    {
+        List<Card> cards = new ArrayList<Card>();
+        for (int i = 0; i < data.size(); i++)
+            cards.add(decode(data.subList(i, i + 2)));
+        return cards;
     }
 }
