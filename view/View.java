@@ -1,38 +1,78 @@
 package view;
 
-import java.util.List;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
 
-import model.Card;
-import model.Player;
-import model.Scores;
-import client.Client;
+import model.Game;
 
-public interface View
+public class View
 {
-	/**
-	 * Tells the view what client methods to call.
-	 */
-	public void addListener(Client.Listener listener);
-	
-	/**
-	 * Passed to the client for calling.
-	 */
-	public interface Listener
-	{
-		public void showNewGame(int numDecks, Scores playerScores);
-		
-		public void showNewRound(Scores playerScores, Player dealer, Card.VALUE trumpValue);
-		
-		public void showDraw(Card card, Player player);
-		
-		public void showShow(List<Card> cards, Player player, Card.SUIT trumpSuit);
-		
-		public void showHide(List<Card> cards);
-		
-		public void showPlay(List<Card> cards);
-		
-		public void showTrickInfo(List<Card> discards, int dPointsEarned, Player winningPlayer);
-		
-		public void showRoundEnd(Scores playerScores, List<Card> hiddenCards, int dPointsEarned);
-	}
+    private JFrame frame;
+
+    private JTextField notificationField;
+    private JButton mainButton;
+    private GamePanel gamePanel;
+
+    public View()
+    {
+        frame = new JFrame("Tractor");
+
+        notificationField = new JTextField("Welcome to Tractor");
+        mainButton = new JButton("JOIN ROOM");
+        gamePanel = new GamePanel();
+    }
+
+    public void setup()
+    {
+        notificationField.setEditable(false);
+        
+        frame.setSize(800, 600);
+        frame.setResizable(false);
+
+        GroupLayout layout = new GroupLayout(frame.getContentPane());
+
+        layout.setHorizontalGroup(layout
+                .createParallelGroup()
+                .addGroup(
+                        layout.createSequentialGroup()
+                                .addComponent(notificationField)
+                                .addComponent(mainButton))
+                .addComponent(gamePanel));
+        layout.setVerticalGroup(layout
+                .createSequentialGroup()
+                .addGroup(
+                        layout.createParallelGroup(Alignment.BASELINE)
+                                .addComponent(notificationField)
+                                .addComponent(mainButton))
+                .addComponent(gamePanel));
+        
+        frame.getContentPane().setLayout(layout);
+    }
+    
+    public void show()
+    {
+        frame.setVisible(true);
+        frame.setFocusable(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    public void setGame(Game game)
+    {
+        gamePanel.setGame(game);
+    }
+
+    public void repaint()
+    {
+        frame.repaint();
+    }
+
+    public static void main(String ... args)
+    {
+        View view = new View();
+        view.setup();
+        view.show();
+    }
 }
