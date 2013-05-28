@@ -16,7 +16,7 @@ public final class Card
 
 	public enum SUIT
 	{
-		SPADE, HEART, CLUB, DIAMOND, TRUMP
+		SPADE, HEART, DIAMOND, CLUB, TRUMP
 	};
 
 	public static final VALUE[] values = {TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING, ACE};
