@@ -121,9 +121,14 @@ public class Game
         lastWinningPlay = null;
     }
 
+    public Player getCurrentPlayer()
+    {
+        return players.get(playerIndex);
+    }
+
     public boolean canDrawFromDeck(int playerID)
     {
-        return !deck.isEmpty() && players.get(playerIndex).ID == playerID;
+        return !deck.isEmpty() && getCurrentPlayer().ID == playerID;
     }
 
     public void drawFromDeck(int playerID)
@@ -190,6 +195,10 @@ public class Game
 
     public boolean canPlay(Play play)
     {
+        /* Must be current player */
+        if (play.getPlayerID() != getCurrentPlayer().ID)
+            return false;
+
         Trick currentTrick = tricks.get(tricks.size() - 1);
         if (currentTrick.getPlays().isEmpty())
         {
@@ -261,6 +270,7 @@ public class Game
         Trick currentTrick = tricks.get(tricks.size() - 1);
         currentTrick.addPlay(play);
         hands.get(play.getPlayerID()).playCards(play.getCards());
+        playerIndex = (playerIndex + 1) % players.size();
 
         if (currentTrick.numPlays() == players.size())
         {

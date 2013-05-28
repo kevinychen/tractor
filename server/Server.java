@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import model.Card;
 import model.Game;
@@ -26,6 +28,7 @@ public class Server
     private Map<Integer, PrintWriter> outs;
 
     private Game game;
+    private Timer drawingCardsTimer = new Timer();
 
     public void startServer(int port) throws IOException
     {
@@ -129,6 +132,25 @@ public class Server
                 announce(command, Long.toString(randomSeed));
             }
             // TODO ask other players to verify?
+
+            /* Start drawing */
+            drawingCardsTimer.cancel();
+            drawingCardsTimer.schedule(new TimerTask()
+            {
+                public void run()
+                {
+                    int currentPlayerID = game.getCurrentPlayer().ID;
+                    if (game.canDrawFromDeck(currentPlayerID))
+                    {
+                        game.drawFromDeck(currentPlayerID);
+                        announce("DRAW", Integer.toString(currentPlayerID));
+                    }
+                    else
+                    {
+                        drawingCardsTimer.cancel();
+                    }
+                }
+            }, 1000, 250);
         }
         else
         {
