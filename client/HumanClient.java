@@ -18,6 +18,13 @@ public class HumanClient extends Client
         super(name);
     }
 
+    public void addView()
+    {
+        view = new View(this);
+        view.setup();
+        view.show();
+    }
+
     @Override
     protected void processMessage(String... data)
     {
@@ -72,5 +79,4 @@ public class HumanClient extends Client
         // TODO Auto-generated method stub
 
     }
-
 }
