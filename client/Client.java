@@ -20,6 +20,8 @@ public abstract class Client
 {
     protected String name;
 
+    private Socket socket;
+
     private PrintWriter out;
 
     protected Game game;
@@ -28,6 +30,7 @@ public abstract class Client
     public Client(String name)
     {
         this.name = name;
+        this.socket = new Socket();
     }
 
     /**
@@ -37,7 +40,6 @@ public abstract class Client
      */
     public void connect(int port, byte[] address) throws IOException
     {
-        Socket socket = new Socket();
         socket.connect(new InetSocketAddress(InetAddress.getByAddress(address),
                 port), 30000);
 
@@ -54,14 +56,25 @@ public abstract class Client
                 }
                 catch (IOException e)
                 {
-                    System.out.println("Socket connection closed.");
-                    e.printStackTrace();
+                    close();
                 }
             }
         }.start();
 
         out = new PrintWriter(socket.getOutputStream(), true);
         request("HELLO", name);
+    }
+
+    public void close()
+    {
+        try
+        {
+            socket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     /* Listed below are all client side methods */

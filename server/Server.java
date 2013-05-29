@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -22,17 +23,26 @@ import model.Player;
 public class Server
 {
     private ServerSocket serverSocket;
+    private boolean running;
 
-    private int currentPlayerID = 101;
+    private int currentPlayerID;
     private List<Player> players;
     private Map<Integer, PrintWriter> outs;
 
     private Game game;
     private Timer drawingCardsTimer = new Timer();
 
+    public Server()
+    {
+        currentPlayerID = 101;
+        players = new ArrayList<Player>();
+        outs = new HashMap<Integer, PrintWriter>();
+    }
+
     public void startServer(int port) throws IOException
     {
         serverSocket = new ServerSocket(port);
+        running = true;
 
         new Thread()
         {
@@ -40,7 +50,7 @@ public class Server
             {
                 try
                 {
-                    while (true)
+                    while (running)
                     {
                         final Socket incoming = serverSocket.accept();
 
@@ -63,7 +73,7 @@ public class Server
                                     outs.put(player.ID, new PrintWriter(
                                             incoming.getOutputStream()));
 
-                                    while (true)
+                                    while (running)
                                         processMessage(player,
                                                 parse(in.readLine()));
                                 }
@@ -108,6 +118,22 @@ public class Server
                 }
             }
         }.start();
+    }
+
+    public void close()
+    {
+        try
+        {
+            serverSocket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            running = false;
+        }
     }
 
     protected void processMessage(Player player, String... data)
