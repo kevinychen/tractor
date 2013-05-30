@@ -92,19 +92,24 @@ public class GamePanel extends JPanel
                             + Card.VALUE.values()[playerScores.get(playerID)],
                     800, y += FONT_HEIGHT);
 
+        if (!game.started())
+            return;
+
         /* Draw deck */
         if (game.canDrawFromDeck(game.getCurrentPlayer().ID))
             g.drawImage(CARD_BACK_IMAGE, 465, 350, null);
 
         /* Draw hands */
         int myIndex = players.indexOf(findWithID(client.myID(), players));
-        List<Card> myCards = game.getSortedHandCards(client.myID());
-        if (myCards != null)
+        for (int i = 0; i < players.size(); i++)
         {
-            int startX = 500 - myCards.size() * 7;
-            for (int i = 0; i < myCards.size(); i++)
-                drawCard(myCards.get(i), startX + 14 * i, 660, g);
+            List<Card> cards = game.getSortedHandCards(players.get(i).ID);
+            if (i != myIndex && cards.size() > 18)
+                cards = cards.subList(0, 18);
+            drawCards(cards, i - myIndex, 0.8, players.size(), i != myIndex, g);
         }
+
+        /* Draw current trick */
     }
 
     private Player findWithID(int playerID, List<Player> players)
@@ -116,10 +121,33 @@ public class GamePanel extends JPanel
         return null;
     }
 
-    private void drawCard(Card card, int x, int y, Graphics g)
+    private void drawCards(List<Card> cards, int playerIndex,
+            double percentage, int numPlayers, boolean faceDown, Graphics g)
+    {
+        /*
+         * Draw cards of the given player. percentage refers to how far the
+         * cards are placed from the center.
+         */
+        double angle = Math.PI / 2 - (2 * Math.PI / numPlayers * playerIndex);
+        drawCards(cards, (int) (500 * (1 + percentage * Math.cos(angle))),
+                (int) (400 * (1 + percentage * Math.sin(angle))), faceDown, g);
+    }
+
+    private void drawCards(List<Card> cards, int x, int y, boolean faceDown,
+            Graphics g)
+    {
+        int cardDiff = faceDown ? Math.min(14, 100 / (cards.size() + 1)) : 14;
+        int totalX = cardDiff * (cards.size() - 1) + 71;
+        for (int i = 0; i < cards.size(); i++)
+            drawCard(cards.get(i), x - totalX / 2 + cardDiff * i, y - 48, faceDown, g);
+    }
+
+    private void drawCard(Card card, int x, int y, boolean faceDown, Graphics g)
     {
         BufferedImage image;
-        if (card.value == Card.VALUE.BIG_JOKER)
+        if (faceDown)
+            image = CARD_BACK_IMAGE;
+        else if (card.value == Card.VALUE.BIG_JOKER)
             image = BIG_JOKER_IMAGE;
         else if (card.value == Card.VALUE.SMALL_JOKER)
             image = SMALL_JOKER_IMAGE;

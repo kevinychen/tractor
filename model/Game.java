@@ -140,10 +140,14 @@ public class Game
         return players.get(playerIndex);
     }
 
+    public boolean started()
+    {
+        return deck != null;
+    }
+
     public boolean canDrawFromDeck(int playerID)
     {
-        return deck != null && !deck.isEmpty()
-                && getCurrentPlayer().ID == playerID;
+        return !deck.isEmpty() && getCurrentPlayer().ID == playerID;
     }
 
     public void drawFromDeck(int playerID)
@@ -217,14 +221,19 @@ public class Game
         {
             public int compare(Card card1, Card card2)
             {
-                int score1 = (isTrump(card1) ? 100 : 0) + cardRank(card1) * 5
-                        + card1.suit.ordinal();
-                int score2 = (isTrump(card2) ? 100 : 0) + cardRank(card2) * 5
-                        + card2.suit.ordinal();
+                int score1 = (isTrump(card1) ? 100 : 0) + card1.suit.ordinal()
+                        * 20 + cardRank(card1);
+                int score2 = (isTrump(card2) ? 100 : 0) + card2.suit.ordinal()
+                        * 20 + cardRank(card2);
                 return score1 - score2;
             }
         });
         return cards;
+    }
+
+    public Trick getCurrentTrick()
+    {
+        return tricks.get(tricks.size() - 1);
     }
 
     public boolean canPlay(Play play)
