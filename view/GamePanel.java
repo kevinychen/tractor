@@ -3,9 +3,12 @@ package view;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +17,6 @@ import javax.swing.JPanel;
 
 import model.Card;
 import model.Game;
-import model.Hand;
 import model.Player;
 import client.HumanClient;
 
@@ -32,6 +34,9 @@ public class GamePanel extends JPanel
     private HumanClient client;
 
     private Game game;
+
+    private List<Card> selectedCards;
+    private CardSelectListener cardSelectListener;
 
     public GamePanel(HumanClient client)
     {
@@ -58,6 +63,8 @@ public class GamePanel extends JPanel
     public void setGame(Game game)
     {
         this.game = game;
+        this.selectedCards = new ArrayList<Card>();
+        addMouseListener(cardSelectListener = new CardSelectListener());
     }
 
     public void paintComponent(Graphics g)
@@ -106,7 +113,8 @@ public class GamePanel extends JPanel
             List<Card> cards = game.getSortedHandCards(players.get(i).ID);
             if (i != myIndex && cards.size() > 18)
                 cards = cards.subList(0, 18);
-            drawCards(cards, i - myIndex, 0.8, players.size(), i != myIndex, g);
+            drawCards(cards, i - myIndex, 0.8, players.size(), i != myIndex,
+                    i == myIndex, g);
         }
 
         /* Draw current trick */
@@ -122,7 +130,8 @@ public class GamePanel extends JPanel
     }
 
     private void drawCards(List<Card> cards, int playerIndex,
-            double percentage, int numPlayers, boolean faceDown, Graphics g)
+            double percentage, int numPlayers, boolean faceDown, boolean mine,
+            Graphics g)
     {
         /*
          * Draw cards of the given player. percentage refers to how far the
@@ -130,16 +139,31 @@ public class GamePanel extends JPanel
          */
         double angle = Math.PI / 2 - (2 * Math.PI / numPlayers * playerIndex);
         drawCards(cards, (int) (500 * (1 + percentage * Math.cos(angle))),
-                (int) (400 * (1 + percentage * Math.sin(angle))), faceDown, g);
+                (int) (400 * (1 + percentage * Math.sin(angle))), faceDown,
+                mine, g);
     }
 
     private void drawCards(List<Card> cards, int x, int y, boolean faceDown,
-            Graphics g)
+            boolean mine, Graphics g)
     {
         int cardDiff = faceDown ? Math.min(14, 100 / (cards.size() + 1)) : 14;
         int totalX = cardDiff * (cards.size() - 1) + 71;
+        int startX = x - totalX / 2, startY = y - 48;
         for (int i = 0; i < cards.size(); i++)
-            drawCard(cards.get(i), x - totalX / 2 + cardDiff * i, y - 48, faceDown, g);
+        {
+            boolean selected = mine && selectedIndex(cards.get(i)) != -1;
+            drawCard(cards.get(i), startX + cardDiff * i, startY
+                    - (selected ? 20 : 0), faceDown, g);
+        }
+
+        /* Update cardSelectListener */
+        if (mine)
+        {
+            cardSelectListener.startX = startX;
+            cardSelectListener.startY = startY;
+            cardSelectListener.cardDiff = cardDiff;
+            cardSelectListener.cards = cards;
+        }
     }
 
     private void drawCard(Card card, int x, int y, boolean faceDown, Graphics g)
@@ -154,5 +178,39 @@ public class GamePanel extends JPanel
         else
             image = CARD_IMAGES[card.value.ordinal()][card.suit.ordinal()];
         g.drawImage(image, x, y, null);
+    }
+
+    private int selectedIndex(Card card)
+    {
+        for (int i = 0; i < selectedCards.size(); i++)
+            if (card == selectedCards.get(i))
+                return i;
+
+        return -1;
+    }
+
+    private class CardSelectListener extends MouseAdapter
+    {
+        int startX, startY, cardDiff;
+        List<Card> cards;
+
+        @Override
+        public void mouseClicked(MouseEvent e)
+        {
+            if (e.getY() >= startY - 20 && e.getY() < startY + 96)
+            {
+                int cardIndex = (e.getX() - startX) / cardDiff;
+                if (cardIndex < 0 || cardIndex > cards.size() + 5)
+                    return;
+
+                /* Toggle selected card state */
+                int selectedIndex = selectedIndex(cards.get(cardIndex));
+                if (selectedIndex == -1)
+                    selectedCards.add(cards.get(cardIndex));
+                else
+                    selectedCards.remove(selectedIndex);
+                repaint();
+            }
+        }
     }
 }

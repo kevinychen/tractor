@@ -17,7 +17,6 @@ import javax.swing.JTextField;
 
 import model.Game;
 import model.GameProperties;
-import model.Player;
 import server.HumanServer;
 import client.HumanClient;
 
