@@ -135,8 +135,9 @@ public class GamePanel extends JPanel
             {
                 drawCards(
                         trickPlay.getCards(),
-                        players.indexOf(findWithID(trickPlay.getPlayerID(), players))
-                                - myIndex, 0.4, players.size(), false, false, g);
+                        players.indexOf(findWithID(trickPlay.getPlayerID(),
+                                players)) - myIndex, 0.4, players.size(),
+                        false, false, g);
             }
     }
 
