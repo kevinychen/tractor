@@ -23,6 +23,14 @@ public class Game
     /* index of current master (which determines round score) */
     private int masterIndex;
 
+    /* state of the game */
+    public enum State
+    {
+        AWAITING_SHOW, AWAITING_KITTY, AWAITING_PLAY
+    }
+
+    private State state;
+
     private List<Card> deck;
 
     /* index of current card drawer / current card player */
@@ -119,6 +127,7 @@ public class Game
         /* initialize other variables */
         playerIndex = masterIndex;
         shownCards = null;
+        state = State.AWAITING_SHOW;
         kitty = null;
         hands.clear();
         teams.clear();
@@ -145,6 +154,11 @@ public class Game
         return deck != null;
     }
 
+    public Game.State getState()
+    {
+        return state;
+    }
+
     public boolean canDrawFromDeck(int playerID)
     {
         return !deck.isEmpty() && getCurrentPlayer().ID == playerID;
@@ -152,14 +166,19 @@ public class Game
 
     public void drawFromDeck(int playerID)
     {
-        hands.get(playerID).addCard(deck.remove(deck.size() - 1));
-        playerIndex = (playerIndex + 1) % players.size();
-
-        /* At some point, give the remaining cards to the master */
-        if (deck.size() == kittySize())
+        if (deck.size() > kittySize())
+        {
+            hands.get(playerID).addCard(deck.remove(deck.size() - 1));
+            playerIndex = (playerIndex + 1) % players.size();
+        }
+        else if (shownCards != null)
+        {
+            /* At some point, give the remaining cards to the master */
             while (!deck.isEmpty())
                 hands.get(players.get(masterIndex).ID).addCard(
                         deck.remove(deck.size() - 1));
+            state = State.AWAITING_KITTY;
+        }
     }
 
     public Play getShownCards()
@@ -178,10 +197,10 @@ public class Game
             else if (!card.equals(firstCard))
                 return false;
         }
-        if (firstCard.value == Card.VALUE.BIG_JOKER
+        if (firstCard.value == Card.VALUE.BIG_JOKER && shownCards != null
                 && cards.numCards() < shownCards.numCards())
             return false;
-        else if (firstCard.value != Card.VALUE.BIG_JOKER
+        else if (firstCard.value != Card.VALUE.BIG_JOKER && shownCards != null
                 && cards.numCards() <= shownCards.numCards())
             return false;
         else
@@ -208,6 +227,7 @@ public class Game
 
     public void makeKitty(Play cards)
     {
+        state = State.AWAITING_PLAY;
         kitty = cards;
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
     }
@@ -240,6 +260,10 @@ public class Game
     {
         /* Must be current player */
         if (play.getPlayerID() != getCurrentPlayer().ID)
+            return false;
+
+        /* Must not be awaiting a draw or making the kitty */
+        if (state != State.AWAITING_PLAY)
             return false;
 
         Trick currentTrick = tricks.get(tricks.size() - 1);

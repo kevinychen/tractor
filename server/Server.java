@@ -66,12 +66,12 @@ public class Server
                             {
                                 try
                                 {
-                                    player = makePlayer();
-                                    if (player == null)
-                                        return;
-
                                     synchronized (Server.this)
                                     {
+                                        player = makePlayer();
+                                        if (player == null)
+                                            return;
+
                                         players.add(player);
                                         outs.put(player.ID, new PrintWriter(
                                                 incoming.getOutputStream(),

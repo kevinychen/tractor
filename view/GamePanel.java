@@ -113,11 +113,19 @@ public class GamePanel extends JPanel
             List<Card> cards = game.getSortedHandCards(players.get(i).ID);
             if (i != myIndex && cards.size() > 18)
                 cards = cards.subList(0, 18);
-            drawCards(cards, i - myIndex, 0.8, players.size(), i != myIndex,
+            drawCards(cards, i - myIndex, 0.75, players.size(), i != myIndex,
                     i == myIndex, g);
         }
 
         /* Draw current trick */
+    }
+
+    public List<Card> resetSelected()
+    {
+        List<Card> selected = new ArrayList<Card>(selectedCards);
+        selectedCards.clear();
+        repaint();
+        return selected;
     }
 
     private Player findWithID(int playerID, List<Player> players)
@@ -202,6 +210,8 @@ public class GamePanel extends JPanel
                 int cardIndex = (e.getX() - startX) / cardDiff;
                 if (cardIndex < 0 || cardIndex > cards.size() + 5)
                     return;
+                if (cardIndex >= cards.size())
+                    cardIndex = cards.size() - 1;
 
                 /* Toggle selected card state */
                 int selectedIndex = selectedIndex(cards.get(cardIndex));

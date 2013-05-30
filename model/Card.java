@@ -88,7 +88,7 @@ public final class Card
     public static List<Card> decodeCards(List<String> data)
     {
         List<Card> cards = new ArrayList<Card>();
-        for (int i = 0; i < data.size(); i++)
+        for (int i = 1; i < data.size(); i += 2)
             cards.add(decode(data.subList(i, i + 2)));
         return cards;
     }

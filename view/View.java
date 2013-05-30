@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.List;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -15,8 +16,10 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
+import model.Card;
 import model.Game;
 import model.GameProperties;
+import model.Play;
 import server.HumanServer;
 import client.HumanClient;
 
@@ -24,6 +27,8 @@ public class View
 {
     private HumanServer server;
     private HumanClient client;
+
+    private Game game;
 
     private JFrame frame;
 
@@ -33,6 +38,8 @@ public class View
     private JButton createRoomButton, closeRoomButton, joinRoomButton,
             leaveRoomButton, newGameButton, newRoundButton;
     private JButton[] buttons;
+
+    private JButton actionButton;
 
     public View(HumanClient client)
     {
@@ -138,6 +145,32 @@ public class View
         createRoomButton.setVisible(true);
         joinRoomButton.setVisible(true);
 
+        actionButton = new JButton();
+        actionButton.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
+                if (game != null && game.started())
+                {
+                    List<Card> cards = gamePanel.resetSelected();
+                    if (cards.isEmpty())
+                        return;
+                    switch (game.getState())
+                    {
+                        case AWAITING_SHOW:
+                            View.this.client.requestShowCards(cards);
+                            break;
+                        case AWAITING_KITTY:
+                            View.this.client.requestMakeKitty(cards);
+                            break;
+                        case AWAITING_PLAY:
+                            View.this.client.requestPlayCards(cards);
+                            break;
+                    }
+                }
+            }
+        });
+
         gamePanel = new GamePanel(client);
 
         frame.setSize(1000, 800);
@@ -160,9 +193,11 @@ public class View
             parallelGroup.addComponent(button);
         }
         layout.setHorizontalGroup(layout.createParallelGroup()
-                .addGroup(sequentialGroup).addComponent(gamePanel));
+                .addGroup(sequentialGroup).addComponent(gamePanel)
+                .addComponent(actionButton));
         layout.setVerticalGroup(layout.createSequentialGroup()
-                .addGroup(parallelGroup).addComponent(gamePanel));
+                .addGroup(parallelGroup).addComponent(gamePanel)
+                .addComponent(actionButton));
 
         frame.getContentPane().setLayout(layout);
     }
@@ -175,7 +210,8 @@ public class View
         }
         catch (IOException e)
         {
-            JOptionPane.showMessageDialog(frame, "Error: could not load card images.");
+            JOptionPane.showMessageDialog(frame,
+                    "Error: could not load card images.");
         }
         frame.setVisible(true);
         frame.setFocusable(true);
@@ -240,6 +276,7 @@ public class View
     {
         notificationField
                 .setText("New game started. Click 'New Round' to begin.");
+        this.game = game;
         gamePanel.setGame(game);
         frame.repaint();
     }
@@ -258,6 +295,19 @@ public class View
 
     public void repaint()
     {
+        if (game != null && game.started())
+            switch (game.getState())
+            {
+                case AWAITING_SHOW:
+                    actionButton.setText("SHOW");
+                    break;
+                case AWAITING_KITTY:
+                    actionButton.setText("SET KITTY");
+                    break;
+                case AWAITING_PLAY:
+                    actionButton.setText("PLAY");
+                    break;
+            }
         frame.repaint();
     }
 }

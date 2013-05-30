@@ -110,7 +110,6 @@ public class HumanClient extends Client
         {
             /* DRAW [player ID] */
             game.drawFromDeck(Integer.parseInt(params.get(0)));
-            view.repaint();
         }
         else
         {
@@ -133,6 +132,7 @@ public class HumanClient extends Client
                 game.play(play);
             }
         }
+        view.repaint();
     }
 
     @Override
