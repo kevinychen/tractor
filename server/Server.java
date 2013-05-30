@@ -70,16 +70,20 @@ public class Server
                                     if (player == null)
                                         return;
 
-                                    players.add(player);
-                                    outs.put(player.ID, new PrintWriter(
-                                            incoming.getOutputStream(), true));
-                                    if (game != null)
-                                        game.addPlayer(player);
-                                    announce("ADDPLAYER",
-                                            Integer.toString(player.ID),
-                                            player.name);
-                                    message(player, "YOU",
-                                            Integer.toString(player.ID));
+                                    synchronized (Server.this)
+                                    {
+                                        players.add(player);
+                                        outs.put(player.ID, new PrintWriter(
+                                                incoming.getOutputStream(),
+                                                true));
+                                        if (game != null)
+                                            game.addPlayer(player);
+                                        announce("ADDPLAYER",
+                                                Integer.toString(player.ID),
+                                                player.name);
+                                        message(player, "YOU",
+                                                Integer.toString(player.ID));
+                                    }
 
                                     while (true)
                                     {
@@ -151,7 +155,7 @@ public class Server
         }
     }
 
-    protected void processMessage(Player player, String... data)
+    protected synchronized void processMessage(Player player, String... data)
     {
         String command = data[0];
         List<String> params = Arrays.asList(data).subList(1, data.length);
