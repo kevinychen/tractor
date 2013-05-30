@@ -72,10 +72,15 @@ public class Server
                                         if (player == null)
                                             return;
 
-                                        players.add(player);
                                         outs.put(player.ID, new PrintWriter(
                                                 incoming.getOutputStream(),
                                                 true));
+                                        for (Player player : players)
+                                            message(this.player,
+                                                    "ADDPLAYER",
+                                                    Integer.toString(player.ID),
+                                                    player.name);
+                                        players.add(player);
                                         if (game != null)
                                             game.addPlayer(player);
                                         announce("ADDPLAYER",
@@ -101,12 +106,15 @@ public class Server
                                 {
                                     if (player != null)
                                     {
-                                        players.remove(player);
-                                        outs.remove(player);
-                                        if (game != null)
-                                            game.removePlayer(player);
-                                        announce("REMOVEPLAYER",
-                                                Integer.toString(player.ID));
+                                        synchronized (Server.this)
+                                        {
+                                            players.remove(player);
+                                            outs.remove(player);
+                                            if (game != null)
+                                                game.removePlayer(player);
+                                            announce("REMOVEPLAYER",
+                                                    Integer.toString(player.ID));
+                                        }
                                     }
                                 }
                             }
@@ -187,7 +195,8 @@ public class Server
                     public void run()
                     {
                         int currentPlayerID = game.getCurrentPlayer().ID;
-                        if (game.started() && game.canDrawFromDeck(currentPlayerID))
+                        if (game.started()
+                                && game.canDrawFromDeck(currentPlayerID))
                         {
                             game.drawFromDeck(currentPlayerID);
                             announce("DRAW", Integer.toString(currentPlayerID));

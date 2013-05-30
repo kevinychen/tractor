@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 
 import model.Card;
 import model.Game;
+import model.Play;
 import model.Player;
 import client.HumanClient;
 
@@ -117,6 +118,15 @@ public class GamePanel extends JPanel
                     i == myIndex, g);
         }
 
+        /* Draw shown cards */
+        Play play = game.getShownCards();
+        if (play != null && game.getState() == Game.State.AWAITING_SHOW)
+        {
+            drawCards(play.getCards(),
+                    players.indexOf(findWithID(play.getPlayerID(), players))
+                            - myIndex, 0.4, players.size(), false, false, g);
+        }
+
         /* Draw current trick */
     }
 
@@ -159,7 +169,8 @@ public class GamePanel extends JPanel
         int startX = x - totalX / 2, startY = y - 48;
         for (int i = 0; i < cards.size(); i++)
         {
-            boolean selected = mine && selectedIndex(cards.get(i)) != -1;
+            /* Paint selected cards slightly higher */
+            boolean selected = mine && index(cards.get(i), selectedCards) != -1;
             drawCard(cards.get(i), startX + cardDiff * i, startY
                     - (selected ? 20 : 0), faceDown, g);
         }
@@ -188,10 +199,10 @@ public class GamePanel extends JPanel
         g.drawImage(image, x, y, null);
     }
 
-    private int selectedIndex(Card card)
+    private int index(Card card, List<Card> cards)
     {
-        for (int i = 0; i < selectedCards.size(); i++)
-            if (card == selectedCards.get(i))
+        for (int i = 0; i < cards.size(); i++)
+            if (card == cards.get(i))
                 return i;
 
         return -1;
@@ -214,7 +225,7 @@ public class GamePanel extends JPanel
                     cardIndex = cards.size() - 1;
 
                 /* Toggle selected card state */
-                int selectedIndex = selectedIndex(cards.get(cardIndex));
+                int selectedIndex = index(cards.get(cardIndex), selectedCards);
                 if (selectedIndex == -1)
                     selectedCards.add(cards.get(cardIndex));
                 else
