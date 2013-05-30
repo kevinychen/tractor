@@ -22,6 +22,12 @@ public class Play
         return playerID;
     }
 
+    @Override
+    public String toString()
+    {
+        return "Play [playerID=" + playerID + ", cards=" + cards + "]";
+    }
+
     public List<Card> getCards()
     {
         return cards;

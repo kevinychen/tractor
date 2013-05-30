@@ -428,7 +428,6 @@ public class Game
     private Play winningPlay(Trick trick)
     {
         Play startingPlay = trick.getPlays().get(0);
-
         Card.SUIT startingSuit = suit(startingPlay);
         List<int[]> profile = getProfile(startingPlay.getCards());
 
@@ -502,6 +501,7 @@ public class Game
             current.add(card);
             fillPermutations(cards, current, permutations);
             cards.add(i, card);
+            current.remove(current.size() - 1);
         }
     }
 
