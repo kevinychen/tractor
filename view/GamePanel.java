@@ -19,6 +19,7 @@ import model.Card;
 import model.Game;
 import model.Play;
 import model.Player;
+import model.Trick;
 import client.HumanClient;
 
 public class GamePanel extends JPanel
@@ -128,6 +129,15 @@ public class GamePanel extends JPanel
         }
 
         /* Draw current trick */
+        Trick trick = game.getCurrentTrick();
+        for (Play trickPlay : trick.getPlays())
+            if (trickPlay != null)
+            {
+                drawCards(
+                        trickPlay.getCards(),
+                        players.indexOf(findWithID(trickPlay.getPlayerID(), players))
+                                - myIndex, 0.4, players.size(), false, false, g);
+            }
     }
 
     public List<Card> resetSelected()
