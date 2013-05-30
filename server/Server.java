@@ -73,6 +73,11 @@ public class Server
                                     players.add(player);
                                     outs.put(player.ID, new PrintWriter(
                                             incoming.getOutputStream(), true));
+                                    if (game != null)
+                                        game.addPlayer(player);
+                                    announce("ADDPLAYER",
+                                            Integer.toString(player.ID),
+                                            player.name);
 
                                     while (true)
                                     {
@@ -92,6 +97,10 @@ public class Server
                                     {
                                         players.remove(player);
                                         outs.remove(player);
+                                        if (game != null)
+                                            game.removePlayer(player);
+                                        announce("REMOVEPLAYER",
+                                                Integer.toString(player.ID));
                                     }
                                 }
                             }
@@ -152,6 +161,7 @@ public class Server
         {
             /* STARTGAME [properties] */
             game = new Game(GameProperties.decode(params));
+            game.addPlayers(players);
             announce(data);
             // TODO ask other players to verify?
         }

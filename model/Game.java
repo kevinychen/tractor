@@ -72,6 +72,12 @@ public class Game
         playerScores.put(player.ID, 0);
     }
 
+    public void addPlayers(List<Player> players)
+    {
+        for (Player player : players)
+            addPlayer(player);
+    }
+
     public void removePlayer(Player player)
     {
         players.remove(player);

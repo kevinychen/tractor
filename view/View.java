@@ -78,6 +78,7 @@ public class View
             {
                 // String input = JOptionPane
                 // .showInputDialog("Enter IP: e.g. 192.168.0.1");
+                // TODO Set Cancel to go back to original state.
                 String input = "127.0.0.1";
 
                 try
@@ -114,6 +115,7 @@ public class View
         {
             public void actionPerformed(ActionEvent e)
             {
+                // TODO Set Cancel to go back to original state.
                 GameProperties properties = new GameProperties();
                 properties.numDecks = 2;
                 properties.find_a_friend = false;

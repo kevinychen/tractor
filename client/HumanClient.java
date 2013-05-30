@@ -1,6 +1,7 @@
 package client;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -8,15 +9,19 @@ import model.Card;
 import model.Game;
 import model.GameProperties;
 import model.Play;
+import model.Player;
 import view.View;
 
 public class HumanClient extends Client
 {
     private View view;
 
+    private List<Player> players;
+
     public HumanClient(String name)
     {
         super(name);
+        players = new ArrayList<Player>();
     }
 
     public void addView()
@@ -61,10 +66,29 @@ public class HumanClient extends Client
         System.out.println("Client received request: " + command + " - "
                 + params);
 
-        if (command.equals("STARTGAME"))
+        if (command.equals("ADDPLAYER"))
+        {
+            /* ADDPLAYER [playerID] [player name] */
+            Player player = new Player(Integer.parseInt(data[1]), data[2]);
+            players.add(player);
+            if (game != null)
+                game.addPlayer(player);
+        }
+        else if (command.equals("REMOVEPLAYER"))
+        {
+            /* REMOVEPLAYER [playerID] */
+            Player removedPlayer = null;
+            for (Player player : players)
+                if (players.remove(removedPlayer = player))
+                    break;
+            if (game != null)
+                game.removePlayer(removedPlayer);
+        }
+        else if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
             game = new Game(GameProperties.decode(params));
+            game.addPlayers(players);
             view.startGame(game);
         }
         else if (command.equals("STARTROUND"))
