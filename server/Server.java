@@ -30,7 +30,7 @@ public class Server
     private Map<Integer, PrintWriter> outs;
 
     private Game game;
-    private Timer drawingCardsTimer = new Timer();
+    private Timer drawingCardsTimer;
 
     public Server()
     {
@@ -78,6 +78,8 @@ public class Server
                                     announce("ADDPLAYER",
                                             Integer.toString(player.ID),
                                             player.name);
+                                    message(player, "YOU",
+                                            Integer.toString(player.ID));
 
                                     while (true)
                                     {
@@ -173,27 +175,27 @@ public class Server
                 long randomSeed = System.currentTimeMillis();
                 game.startRound(randomSeed);
                 announce(command, Long.toString(randomSeed));
+
+                /* Start drawing */
+                drawingCardsTimer = new Timer();
+                drawingCardsTimer.schedule(new TimerTask()
+                {
+                    public void run()
+                    {
+                        int currentPlayerID = game.getCurrentPlayer().ID;
+                        if (game.canDrawFromDeck(currentPlayerID))
+                        {
+                            game.drawFromDeck(currentPlayerID);
+                            announce("DRAW", Integer.toString(currentPlayerID));
+                        }
+                        else
+                        {
+                            drawingCardsTimer.cancel();
+                        }
+                    }
+                }, 1000, 250);
             }
             // TODO ask other players to verify?
-
-            /* Start drawing */
-            drawingCardsTimer.cancel();
-            drawingCardsTimer.schedule(new TimerTask()
-            {
-                public void run()
-                {
-                    int currentPlayerID = game.getCurrentPlayer().ID;
-                    if (game.canDrawFromDeck(currentPlayerID))
-                    {
-                        game.drawFromDeck(currentPlayerID);
-                        announce("DRAW", Integer.toString(currentPlayerID));
-                    }
-                    else
-                    {
-                        drawingCardsTimer.cancel();
-                    }
-                }
-            }, 1000, 250);
         }
         else
         {

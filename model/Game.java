@@ -2,6 +2,7 @@ package model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +126,13 @@ public class Game
         tricks.clear();
         tricks.add(new Trick());
         lastWinningPlay = null;
+
+        for (Player player : players)
+        {
+            hands.put(player.ID, new Hand());
+            teams.put(player.ID, 0); // TODO
+            currentScores.put(player.ID, 0);
+        }
     }
 
     public Player getCurrentPlayer()
@@ -134,7 +142,8 @@ public class Game
 
     public boolean canDrawFromDeck(int playerID)
     {
-        return !deck.isEmpty() && getCurrentPlayer().ID == playerID;
+        return deck != null && !deck.isEmpty()
+                && getCurrentPlayer().ID == playerID;
     }
 
     public void drawFromDeck(int playerID)
@@ -197,6 +206,25 @@ public class Game
     {
         kitty = cards;
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
+    }
+
+    public List<Card> getSortedHandCards(int playerID)
+    {
+        if (hands.get(playerID) == null)
+            return null;
+        List<Card> cards = hands.get(playerID).getCards();
+        Collections.sort(cards, new Comparator<Card>()
+        {
+            public int compare(Card card1, Card card2)
+            {
+                int score1 = (isTrump(card1) ? 100 : 0) + cardRank(card1) * 5
+                        + card1.suit.ordinal();
+                int score2 = (isTrump(card2) ? 100 : 0) + cardRank(card2) * 5
+                        + card2.suit.ordinal();
+                return score1 - score2;
+            }
+        });
+        return cards;
     }
 
     public boolean canPlay(Play play)

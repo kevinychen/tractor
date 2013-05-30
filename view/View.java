@@ -17,6 +17,7 @@ import javax.swing.JTextField;
 
 import model.Game;
 import model.GameProperties;
+import model.Player;
 import server.HumanServer;
 import client.HumanClient;
 
@@ -138,9 +139,9 @@ public class View
         createRoomButton.setVisible(true);
         joinRoomButton.setVisible(true);
 
-        gamePanel = new GamePanel();
+        gamePanel = new GamePanel(client);
 
-        frame.setSize(800, 600);
+        frame.setSize(1000, 800);
         frame.setResizable(false);
 
         arrange();
@@ -169,6 +170,14 @@ public class View
 
     public void show()
     {
+        try
+        {
+            gamePanel.loadImages();
+        }
+        catch (IOException e)
+        {
+            JOptionPane.showMessageDialog(frame, "Error: could not load card images.");
+        }
         frame.setVisible(true);
         frame.setFocusable(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -187,7 +196,7 @@ public class View
 
             createRoomButton.setVisible(false);
             closeRoomButton.setVisible(true);
-            frame.validate();
+            frame.repaint();
         }
         catch (Exception e)
         {
@@ -199,7 +208,7 @@ public class View
     {
         closeRoomButton.setVisible(false);
         createRoomButton.setVisible(true);
-        frame.validate();
+        frame.repaint();
     }
 
     public void joinRoom()
@@ -209,7 +218,7 @@ public class View
         leaveRoomButton.setVisible(true);
         newGameButton.setVisible(true);
         newRoundButton.setVisible(true);
-        frame.validate();
+        frame.repaint();
     }
 
     public void leaveRoom()
@@ -219,13 +228,13 @@ public class View
         joinRoomButton.setVisible(true);
         newGameButton.setVisible(false);
         newRoundButton.setVisible(false);
-        frame.validate();
+        frame.repaint();
     }
 
     public void requestStartGame()
     {
         notificationField.setText("Sending new game request...");
-        frame.validate();
+        frame.repaint();
     }
 
     public void startGame(Game game)
@@ -233,19 +242,23 @@ public class View
         notificationField
                 .setText("New game started. Click 'New Round' to begin.");
         gamePanel.setGame(game);
-        frame.validate();
+        frame.repaint();
     }
 
     public void requestStartRound()
     {
         notificationField.setText("Waiting for other players...");
-        frame.validate();
+        frame.repaint();
     }
 
     public void startRound()
     {
         notificationField.setText("New round started.");
-        frame.validate();
+        frame.repaint();
     }
 
+    public void repaint()
+    {
+        frame.repaint();
+    }
 }

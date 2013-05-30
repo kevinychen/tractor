@@ -74,6 +74,11 @@ public class HumanClient extends Client
             if (game != null)
                 game.addPlayer(player);
         }
+        else if (command.equals("YOU"))
+        {
+            /* YOU [playerID] */
+            myID = Integer.parseInt(data[1]);
+        }
         else if (command.equals("REMOVEPLAYER"))
         {
             /* REMOVEPLAYER [playerID] */
@@ -105,6 +110,7 @@ public class HumanClient extends Client
         {
             /* DRAW [player ID] */
             game.drawFromDeck(Integer.parseInt(params.get(0)));
+            view.repaint();
         }
         else
         {

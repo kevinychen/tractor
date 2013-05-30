@@ -14,7 +14,6 @@ import model.Card;
 import model.Game;
 import model.GameProperties;
 import model.Play;
-import model.Player;
 
 public abstract class Client
 {
@@ -25,7 +24,7 @@ public abstract class Client
     private PrintWriter out;
 
     protected Game game;
-    protected Player me;
+    protected int myID;
 
     public Client(String name)
     {
@@ -90,6 +89,11 @@ public abstract class Client
 
     /* Listed below are all client side methods */
 
+    public int myID()
+    {
+        return myID;
+    }
+
     public void requestStartGame(GameProperties properties)
     {
         request(makeRequest("STARTGAME", properties.encode()));
@@ -102,7 +106,7 @@ public abstract class Client
 
     public void requestShowCards(List<Card> cards)
     {
-        Play play = new Play(me.ID, cards);
+        Play play = new Play(myID, cards);
         if (game.canShowCards(play))
         {
             request(makeRequest("SHOW", Card.encodeCards(cards)));
@@ -123,7 +127,7 @@ public abstract class Client
 
     public void requestPlayCards(List<Card> cards)
     {
-        Play play = new Play(me.ID, cards);
+        Play play = new Play(myID, cards);
         if (game.canPlay(play))
         {
             List<String> args = new ArrayList<String>();
