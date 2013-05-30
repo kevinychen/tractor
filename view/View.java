@@ -5,6 +5,8 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -27,8 +29,11 @@ public class View
     private JFrame frame;
 
     private JTextField notificationField;
-    private JButton[] buttons;
     private GamePanel gamePanel;
+
+    private JButton createRoomButton, closeRoomButton, joinRoomButton,
+            leaveRoomButton, newGameButton, newRoundButton;
+    private JButton[] buttons;
 
     public View(Client client)
     {
@@ -38,37 +43,40 @@ public class View
         frame = new JFrame("Tractor");
 
         notificationField = new JTextField("Welcome to Tractor");
-        buttons = new JButton[4];
-        for (int i = 0; i < buttons.length; i++)
-            buttons[i] = new JButton();
-
-        gamePanel = new GamePanel();
-    }
-
-    public void setup()
-    {
         notificationField.setEditable(false);
 
-        buttons[0].setText("Create Room");
-        buttons[0].addActionListener(new CreateRoomActionListener());
-        buttons[1].setText("Join Room");
-        buttons[1].addActionListener(new JoinRoomActionListener());
-        buttons[2].setText("New Game");
-        buttons[2].addActionListener(new StartNewGameActionListener());
-        buttons[3].setText("New Round");
-        buttons[3].addActionListener(new StartNewRoundActionListener());
+        createRoomButton = new JButton("Create Room");
+        createRoomButton.addActionListener(new CreateRoomActionListener());
+        closeRoomButton = new JButton("Close Room");
+        closeRoomButton.addActionListener(new CloseRoomActionListener());
+        joinRoomButton = new JButton("Join Room");
+        joinRoomButton.addActionListener(new JoinRoomActionListener());
+        leaveRoomButton = new JButton("Leave Room");
+        leaveRoomButton.addActionListener(new LeaveRoomActionListener());
+        newGameButton = new JButton("New Game");
+        newGameButton.addActionListener(new NewGameActionListener());
+        newRoundButton = new JButton("New Round");
+        newRoundButton.addActionListener(new NewRoundActionListener());
+        buttons = new JButton[]
+        { createRoomButton, closeRoomButton, joinRoomButton, leaveRoomButton,
+                newGameButton, newRoundButton };
+        for (JButton button : buttons)
+            button.setVisible(false);
+        createRoomButton.setVisible(true);
+        joinRoomButton.setVisible(true);
+
+        gamePanel = new GamePanel();
 
         frame.setSize(800, 600);
         frame.setResizable(false);
 
-        frame.getContentPane().setLayout(
-                new GroupLayout(frame.getContentPane()));
-        arrangeHeadbar(buttons[0], buttons[1]);
+        arrange();
     }
 
-    public void arrangeHeadbar(JButton... buttons)
+    public void arrange()
     {
-        GroupLayout layout = (GroupLayout) frame.getContentPane().getLayout();
+        GroupLayout layout = new GroupLayout(frame.getContentPane());
+
         Group sequentialGroup = layout.createSequentialGroup();
         Group parallelGroup = layout.createParallelGroup(Alignment.BASELINE);
         sequentialGroup.addComponent(notificationField);
@@ -82,6 +90,8 @@ public class View
                 .addGroup(sequentialGroup).addComponent(gamePanel));
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addGroup(parallelGroup).addComponent(gamePanel));
+
+        frame.getContentPane().setLayout(layout);
     }
 
     public void show()
@@ -101,18 +111,10 @@ public class View
         frame.repaint();
     }
 
-    private void removeButtonListeners(JButton button)
-    {
-        for (ActionListener listener : button.getActionListeners())
-            button.removeActionListener(listener);
-    }
-
     private class CreateRoomActionListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
         {
-            removeButtonListeners(buttons[0]);
-
             try
             {
                 /* Find external IP */
@@ -124,14 +126,13 @@ public class View
 
                 notificationField.setText("Your IP is " + IP + ". Players:");
 
-                buttons[0].setText("Close Room");
-                buttons[0].addActionListener(new CloseRoomActionListener());
+                createRoomButton.setVisible(false);
+                closeRoomButton.setVisible(true);
+                frame.validate();
             }
             catch (Exception e2)
             {
                 JOptionPane.showMessageDialog(frame, e2.getMessage());
-
-                buttons[0].addActionListener(new CreateRoomActionListener());
             }
         }
     }
@@ -143,10 +144,11 @@ public class View
             if (JOptionPane.showConfirmDialog(frame,
                     "Are you sure you want to close the room?") == JOptionPane.YES_OPTION)
             {
-                removeButtonListeners(buttons[0]);
                 server.close();
-                buttons[0].setText("Create Room");
-                buttons[0].addActionListener(new CreateRoomActionListener());
+
+                closeRoomButton.setVisible(false);
+                createRoomButton.setVisible(true);
+                frame.validate();
             }
         }
     }
@@ -155,8 +157,6 @@ public class View
     {
         public void actionPerformed(ActionEvent e)
         {
-            removeButtonListeners(buttons[1]);
-
             String input = JOptionPane
                     .showInputDialog("Enter IP: e.g. 192.168.0.1");
 
@@ -173,15 +173,15 @@ public class View
                 /* Connect to server */
                 client.connect(3003, address);
 
-                arrangeHeadbar(buttons[0], buttons[1], buttons[2], buttons[3]);
-                buttons[1].setText("Start New Game");
-                buttons[1].addActionListener(new LeaveRoomActionListener());
+                joinRoomButton.setVisible(false);
+                leaveRoomButton.setVisible(true);
+                newGameButton.setVisible(true);
+                newRoundButton.setVisible(true);
+                frame.validate();
             }
             catch (Exception e2)
             {
                 JOptionPane.showMessageDialog(frame, e2.getMessage());
-
-                buttons[1].addActionListener(new JoinRoomActionListener());
             }
         }
     }
@@ -190,17 +190,17 @@ public class View
     {
         public void actionPerformed(ActionEvent e)
         {
-            removeButtonListeners(buttons[1]);
-
             client.close();
 
-            arrangeHeadbar(buttons[0], buttons[1]);
-            buttons[1].setText("Join Room");
-            buttons[1].addActionListener(new JoinRoomActionListener());
+            leaveRoomButton.setVisible(false);
+            joinRoomButton.setVisible(true);
+            newGameButton.setVisible(false);
+            newRoundButton.setVisible(false);
+            frame.validate();
         }
     }
 
-    private class StartNewRoundActionListener implements ActionListener
+    private class NewRoundActionListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
         {
@@ -209,7 +209,7 @@ public class View
         }
     }
 
-    private class StartNewGameActionListener implements ActionListener
+    private class NewGameActionListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
         {

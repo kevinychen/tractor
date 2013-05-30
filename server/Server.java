@@ -23,7 +23,7 @@ import model.Player;
 public class Server
 {
     private ServerSocket serverSocket;
-    private boolean running;
+    private List<Socket> sockets;
 
     private int currentPlayerID;
     private List<Player> players;
@@ -42,7 +42,7 @@ public class Server
     public void startServer(int port) throws IOException
     {
         serverSocket = new ServerSocket(port);
-        running = true;
+        sockets = new ArrayList<Socket>();
 
         new Thread()
         {
@@ -50,9 +50,10 @@ public class Server
             {
                 try
                 {
-                    while (running)
+                    while (true)
                     {
                         final Socket incoming = serverSocket.accept();
+                        sockets.add(incoming);
 
                         final BufferedReader in = new BufferedReader(
                                 new InputStreamReader(incoming.getInputStream()));
@@ -73,14 +74,16 @@ public class Server
                                     outs.put(player.ID, new PrintWriter(
                                             incoming.getOutputStream()));
 
-                                    while (running)
-                                        processMessage(player,
-                                                parse(in.readLine()));
+                                    while (true)
+                                    {
+                                        String line = in.readLine();
+                                        if (line == null)
+                                            break;
+                                        parse(line);
+                                    }
                                 }
                                 catch (Exception e)
                                 {
-                                    System.out.println("Connection with "
-                                            + player + " broken");
                                     e.printStackTrace();
                                 }
                                 finally
@@ -113,8 +116,11 @@ public class Server
                 }
                 catch (IOException e)
                 {
-                    System.out.println("Server error.");
                     e.printStackTrace();
+                }
+                finally
+                {
+                    close();
                 }
             }
         }.start();
@@ -125,14 +131,12 @@ public class Server
         try
         {
             serverSocket.close();
+            for (Socket socket : sockets)
+                socket.close();
         }
         catch (IOException e)
         {
             e.printStackTrace();
-        }
-        finally
-        {
-            running = false;
         }
     }
 

@@ -21,7 +21,6 @@ public class HumanClient extends Client
     public void addView()
     {
         view = new View(this);
-        view.setup();
         view.show();
     }
 

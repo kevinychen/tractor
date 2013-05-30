@@ -52,9 +52,18 @@ public abstract class Client
                 try
                 {
                     while (true)
-                        processMessage(parse(in.readLine()));
+                    {
+                        String line = in.readLine();
+                        if (line == null)
+                            break;
+                        processMessage(line);
+                    }
                 }
                 catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+                finally
                 {
                     close();
                 }
