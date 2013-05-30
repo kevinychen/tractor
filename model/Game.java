@@ -241,10 +241,10 @@ public class Game
         {
             public int compare(Card card1, Card card2)
             {
-                int score1 = (isTrump(card1) ? 100 : 0) + card1.suit.ordinal()
-                        * 20 + cardRank(card1);
-                int score2 = (isTrump(card2) ? 100 : 0) + card2.suit.ordinal()
-                        * 20 + cardRank(card2);
+                int score1 = (isTrump(card1) ? 100 : card1.suit.ordinal() * 20)
+                        + cardRank(card1);
+                int score2 = (isTrump(card2) ? 100 : card2.suit.ordinal() * 20)
+                        + cardRank(card2);
                 return score1 - score2;
             }
         });

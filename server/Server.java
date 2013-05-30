@@ -187,7 +187,7 @@ public class Server
                     public void run()
                     {
                         int currentPlayerID = game.getCurrentPlayer().ID;
-                        if (game.canDrawFromDeck(currentPlayerID))
+                        if (game.started() && game.canDrawFromDeck(currentPlayerID))
                         {
                             game.drawFromDeck(currentPlayerID);
                             announce("DRAW", Integer.toString(currentPlayerID));

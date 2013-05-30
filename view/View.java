@@ -1,5 +1,6 @@
 package view;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -19,7 +20,6 @@ import javax.swing.JTextField;
 import model.Card;
 import model.Game;
 import model.GameProperties;
-import model.Play;
 import server.HumanServer;
 import client.HumanClient;
 
@@ -47,6 +47,7 @@ public class View
         this.client = client;
 
         frame = new JFrame("Tractor");
+        frame.getContentPane().setBackground(Color.GREEN);
 
         notificationField = new JTextField("Welcome to Tractor");
         notificationField.setEditable(false);
@@ -192,7 +193,7 @@ public class View
             sequentialGroup.addComponent(button);
             parallelGroup.addComponent(button);
         }
-        layout.setHorizontalGroup(layout.createParallelGroup()
+        layout.setHorizontalGroup(layout.createParallelGroup(Alignment.CENTER)
                 .addGroup(sequentialGroup).addComponent(gamePanel)
                 .addComponent(actionButton));
         layout.setVerticalGroup(layout.createSequentialGroup()
