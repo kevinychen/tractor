@@ -192,6 +192,8 @@ public class Server
                 drawingCardsTimer = new Timer();
                 drawingCardsTimer.schedule(new TimerTask()
                 {
+                    int waitSteps = 0;
+
                     public void run()
                     {
                         int currentPlayerID = game.getCurrentPlayer().ID;
@@ -201,8 +203,10 @@ public class Server
                             game.drawFromDeck(currentPlayerID);
                             announce("DRAW", Integer.toString(currentPlayerID));
                         }
-                        else
+                        else if (waitSteps++ > 30)
                         {
+                            game.takeKittyCards();
+                            announce("TAKEKITTY");
                             drawingCardsTimer.cancel();
                         }
                     }
@@ -225,8 +229,11 @@ public class Server
             else if (command.equals("MAKEKITTY"))
             {
                 /* MAKEKITTY [cards] */
-                game.makeKitty(play);
-                announce(buildMessage(command, player, params));
+                if (game.canMakeKitty(play))
+                {
+                    game.makeKitty(play);
+                    announce(buildMessage(command, player, params));
+                }
             }
             else if (command.equals("PLAY"))
             {

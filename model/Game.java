@@ -78,6 +78,7 @@ public class Game
     public void addPlayer(Player player)
     {
         players.add(player);
+        Collections.sort(players);
         playerScores.put(player.ID, 0);
     }
 
@@ -161,24 +162,27 @@ public class Game
 
     public boolean canDrawFromDeck(int playerID)
     {
-        return !deck.isEmpty() && getCurrentPlayer().ID == playerID;
+        return deck.size() > kittySize() && getCurrentPlayer().ID == playerID;
+    }
+
+    public boolean deckHasCards()
+    {
+        return deck != null && !deck.isEmpty();
     }
 
     public void drawFromDeck(int playerID)
     {
-        if (deck.size() > kittySize())
-        {
-            hands.get(playerID).addCard(deck.remove(deck.size() - 1));
-            playerIndex = (playerIndex + 1) % players.size();
-        }
-        else if (shownCards != null)
-        {
-            /* At some point, give the remaining cards to the master */
-            while (!deck.isEmpty())
-                hands.get(players.get(masterIndex).ID).addCard(
-                        deck.remove(deck.size() - 1));
-            state = State.AWAITING_KITTY;
-        }
+        hands.get(playerID).addCard(deck.remove(deck.size() - 1));
+        playerIndex = (playerIndex + 1) % players.size();
+    }
+
+    public void takeKittyCards()
+    {
+        /* At some point, give the remaining cards to the master */
+        while (!deck.isEmpty())
+            hands.get(players.get(masterIndex).ID).addCard(
+                    deck.remove(deck.size() - 1));
+        state = State.AWAITING_KITTY;
     }
 
     public Play getShownCards()
@@ -223,6 +227,11 @@ public class Game
     public Play getKitty()
     {
         return kitty;
+    }
+
+    public boolean canMakeKitty(Play cards)
+    {
+        return cards.numCards() == kittySize();
     }
 
     public void makeKitty(Play cards)

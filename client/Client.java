@@ -119,10 +119,18 @@ public abstract class Client
 
     public void requestMakeKitty(List<Card> cards)
     {
-        List<String> args = new ArrayList<String>();
-        args.add("MAKEKITTY");
-        args.addAll(Card.encodeCards(cards));
-        request(args.toArray(new String[0]));
+        Play play = new Play(myID, cards);
+        if (game.canMakeKitty(play))
+        {
+            List<String> args = new ArrayList<String>();
+            args.add("MAKEKITTY");
+            args.addAll(Card.encodeCards(cards));
+            request(args.toArray(new String[0]));
+        }
+        else
+        {
+            showNotification("Incorrect number of cards.");
+        }
     }
 
     public void requestPlayCards(List<Card> cards)

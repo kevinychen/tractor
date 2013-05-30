@@ -111,6 +111,11 @@ public class HumanClient extends Client
             /* DRAW [player ID] */
             game.drawFromDeck(Integer.parseInt(params.get(0)));
         }
+        else if (command.equals("TAKEKITTY"))
+        {
+            /* TAKEKITTY */
+            game.takeKittyCards();
+        }
         else
         {
             int playerID = Integer.parseInt(data[1]);

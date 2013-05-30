@@ -104,7 +104,7 @@ public class GamePanel extends JPanel
             return;
 
         /* Draw deck */
-        if (game.canDrawFromDeck(game.getCurrentPlayer().ID))
+        if (game.deckHasCards())
             g.drawImage(CARD_BACK_IMAGE, 465, 350, null);
 
         /* Draw hands */
