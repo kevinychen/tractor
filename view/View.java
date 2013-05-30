@@ -162,8 +162,11 @@ public class View
                             View.this.client.requestShowCards(cards);
                             break;
                         case AWAITING_KITTY:
-                            View.this.client.requestMakeKitty(cards);
-                            break;
+                            if (View.this.client.myID() == game.getMaster().ID)
+                            {
+                                View.this.client.requestMakeKitty(cards);
+                                break;
+                            }
                         case AWAITING_PLAY:
                             View.this.client.requestPlayCards(cards);
                             break;
@@ -303,8 +306,11 @@ public class View
                     actionButton.setText("SHOW");
                     break;
                 case AWAITING_KITTY:
-                    actionButton.setText("SET KITTY");
-                    break;
+                    if (client.myID() == game.getMaster().ID)
+                    {
+                        actionButton.setText("SET KITTY");
+                        break;
+                    }
                 case AWAITING_PLAY:
                     actionButton.setText("PLAY");
                     break;

@@ -231,7 +231,8 @@ public class Game
 
     public boolean canMakeKitty(Play cards)
     {
-        return cards.numCards() == kittySize();
+        return cards.getPlayerID() == players.get(masterIndex).ID
+                && cards.numCards() == kittySize();
     }
 
     public void makeKitty(Play cards)
@@ -315,9 +316,9 @@ public class Game
             partOfProfile[constraint[0]] = partOfProfile[constraint[1]] = true;
         for (boolean isPartOfProfile : partOfProfile)
             if (!isPartOfProfile)
-                return false;
+                return true;
 
-        return true;
+        return false;
     }
 
     public boolean allowedSpecialPlay(Play play)
