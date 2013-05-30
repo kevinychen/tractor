@@ -1,5 +1,6 @@
 package client;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,20 +26,52 @@ public class HumanClient extends Client
     }
 
     @Override
+    public void connect(int port, byte[] address) throws IOException
+    {
+        super.connect(port, address);
+        view.joinRoom();
+    }
+
+    @Override
+    public void close()
+    {
+        super.close();
+        view.leaveRoom();
+    }
+
+    @Override
+    public void requestStartGame(GameProperties properties)
+    {
+        super.requestStartGame(properties);
+        view.requestStartGame();
+    }
+
+    public void requestStartRound()
+    {
+        super.requestStartRound();
+        view.requestStartRound();
+    }
+
+    @Override
     protected void processMessage(String... data)
     {
         String command = data[0];
         List<String> params = Arrays.asList(data).subList(1, data.length);
 
+        System.out.println("Client received request: " + command + " - "
+                + params);
+
         if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
             game = new Game(GameProperties.decode(params));
+            view.startGame(game);
         }
         else if (command.equals("STARTROUND"))
         {
             /* STARTROUND [random seed] */
             game.startRound(Long.parseLong(params.get(0)));
+            view.startRound();
         }
         else if (command.equals("NOTIFICATION"))
         {

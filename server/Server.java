@@ -72,14 +72,14 @@ public class Server
 
                                     players.add(player);
                                     outs.put(player.ID, new PrintWriter(
-                                            incoming.getOutputStream()));
+                                            incoming.getOutputStream(), true));
 
                                     while (true)
                                     {
                                         String line = in.readLine();
                                         if (line == null)
                                             break;
-                                        parse(line);
+                                        processMessage(player, parse(line));
                                     }
                                 }
                                 catch (Exception e)
@@ -144,6 +144,9 @@ public class Server
     {
         String command = data[0];
         List<String> params = Arrays.asList(data).subList(1, data.length);
+
+        System.out.println("Server received request: " + command + " - "
+                + params);
 
         if (command.equals("STARTGAME"))
         {
@@ -230,12 +233,13 @@ public class Server
     {
         PrintWriter out = outs.get(player.ID);
         for (String arg : args)
-            out.print(arg.replace(" ", "\1"));
+            out.print(arg.replace(" ", "\1") + " ");
         out.println();
     }
 
     protected void announce(String... args)
     {
+        System.out.println("Server announcing " + Arrays.toString(args));
         for (Player player : players)
             message(player, args);
     }

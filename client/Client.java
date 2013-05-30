@@ -56,7 +56,7 @@ public abstract class Client
                         String line = in.readLine();
                         if (line == null)
                             break;
-                        processMessage(line);
+                        processMessage(parse(line));
                     }
                 }
                 catch (IOException e)
@@ -65,10 +65,12 @@ public abstract class Client
                 }
                 finally
                 {
+                    System.out.println("client has closed input stream");
                     close();
                 }
             }
         }.start();
+        System.out.println("client has connected input stream");
 
         out = new PrintWriter(socket.getOutputStream(), true);
         request("HELLO", name);
@@ -88,17 +90,17 @@ public abstract class Client
 
     /* Listed below are all client side methods */
 
-    public void startGame(GameProperties properties)
+    public void requestStartGame(GameProperties properties)
     {
         request(makeRequest("STARTGAME", properties.encode()));
     }
 
-    public void startRound()
+    public void requestStartRound()
     {
         request("STARTROUND");
     }
 
-    public void showCards(List<Card> cards)
+    public void requestShowCards(List<Card> cards)
     {
         Play play = new Play(me.ID, cards);
         if (game.canShowCards(play))
@@ -111,7 +113,7 @@ public abstract class Client
         }
     }
 
-    public void makeKitty(List<Card> cards)
+    public void requestMakeKitty(List<Card> cards)
     {
         List<String> args = new ArrayList<String>();
         args.add("MAKEKITTY");
@@ -119,7 +121,7 @@ public abstract class Client
         request(args.toArray(new String[0]));
     }
 
-    public void playCards(List<Card> cards)
+    public void requestPlayCards(List<Card> cards)
     {
         Play play = new Play(me.ID, cards);
         if (game.canPlay(play))
