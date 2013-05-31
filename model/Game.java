@@ -353,6 +353,7 @@ public class Game
         {
             /* Finish trick */
             lastWinningPlay = winningPlay(currentTrick);
+            playerIndex = currentTrick.getPlays().indexOf(lastWinningPlay);
             update(currentScores, lastWinningPlay.getPlayerID(),
                     lastWinningPlay.numPoints());
             tricks.add(new Trick());

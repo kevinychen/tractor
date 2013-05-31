@@ -167,8 +167,13 @@ public class View
                                 break;
                             }
                         case AWAITING_PLAY:
-                            View.this.client.requestPlayCards(cards);
-                            break;
+                            if (View.this.client.myID() == game
+                                    .getCurrentPlayer().ID)
+                            {
+
+                                View.this.client.requestPlayCards(cards);
+                                break;
+                            }
                     }
                 }
             }
@@ -299,6 +304,8 @@ public class View
     public void repaint()
     {
         if (game != null && game.started())
+        {
+            actionButton.setVisible(true);
             switch (game.getState())
             {
                 case AWAITING_SHOW:
@@ -311,9 +318,15 @@ public class View
                         break;
                     }
                 case AWAITING_PLAY:
-                    actionButton.setText("PLAY");
-                    break;
+                    if (client.myID() == game.getCurrentPlayer().ID)
+                    {
+                        actionButton.setText("PLAY");
+                        break;
+                    }
+                default:
+                    actionButton.setVisible(false);
             }
+        }
         frame.repaint();
     }
 }

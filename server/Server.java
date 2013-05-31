@@ -174,6 +174,8 @@ public class Server
         if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
+            if (drawingCardsTimer != null)
+                drawingCardsTimer.cancel();
             game = new Game(GameProperties.decode(params));
             game.addPlayers(players);
             announce(data);

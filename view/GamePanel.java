@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -66,6 +67,8 @@ public class GamePanel extends JPanel
     {
         this.game = game;
         this.selectedCards = new ArrayList<Card>();
+        for (MouseListener listener : getMouseListeners())
+            removeMouseListener(listener);
         addMouseListener(cardSelectListener = new CardSelectListener());
     }
 
