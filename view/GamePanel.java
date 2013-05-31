@@ -26,8 +26,8 @@ public class GamePanel extends JPanel
 {
     private static final long serialVersionUID = 7889326310244251698L;
 
-    private static final int FONT_SIZE = 16;
-    private static final int FONT_HEIGHT = 20;
+    private static final int FONT_SIZE = 14;
+    private static final int FONT_HEIGHT = 18;
 
     private BufferedImage[][] CARD_IMAGES;
     private BufferedImage BIG_JOKER_IMAGE, SMALL_JOKER_IMAGE;
@@ -93,20 +93,20 @@ public class GamePanel extends JPanel
 
         /* Draw scores */
         y = 0;
-        g.drawString("Scores", 900, y += FONT_HEIGHT);
+        g.drawString("Scores", 800, y += FONT_HEIGHT);
         Map<Integer, Integer> playerScores = game.getPlayerScores();
         for (int playerID : playerScores.keySet())
             g.drawString(
                     findWithID(playerID, players).name + ": "
                             + Card.VALUE.values()[playerScores.get(playerID)],
-                    800, y += FONT_HEIGHT);
+                    750, y += FONT_HEIGHT);
 
         if (!game.started())
             return;
 
         /* Draw deck */
         if (game.deckHasCards())
-            g.drawImage(CARD_BACK_IMAGE, 465, 350, null);
+            g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
 
         /* Draw hands */
         int myIndex = players.indexOf(findWithID(client.myID(), players));
@@ -115,7 +115,7 @@ public class GamePanel extends JPanel
             List<Card> cards = game.getSortedHandCards(players.get(i).ID);
             if (i != myIndex && cards.size() > 18)
                 cards = cards.subList(0, 18);
-            drawCards(cards, i - myIndex, 0.75, players.size(), i != myIndex,
+            drawCards(cards, i - myIndex, 0.7, players.size(), i != myIndex,
                     i == myIndex, g);
         }
 
@@ -167,8 +167,8 @@ public class GamePanel extends JPanel
          * cards are placed from the center.
          */
         double angle = Math.PI / 2 - (2 * Math.PI / numPlayers * playerIndex);
-        drawCards(cards, (int) (500 * (1 + percentage * Math.cos(angle))),
-                (int) (400 * (1 + percentage * Math.sin(angle))), faceDown,
+        drawCards(cards, (int) (450 * (1 + percentage * Math.cos(angle))),
+                (int) (350 * (1 + percentage * Math.sin(angle))), faceDown,
                 mine, g);
     }
 

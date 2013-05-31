@@ -84,10 +84,9 @@ public class View
         {
             public void actionPerformed(ActionEvent e)
             {
-                // String input = JOptionPane
-                // .showInputDialog("Enter IP: e.g. 192.168.0.1");
+                String input = JOptionPane
+                        .showInputDialog("Enter IP: e.g. 192.168.0.1");
                 // TODO Set Cancel to go back to original state.
-                String input = "127.0.0.1";
 
                 try
                 {
@@ -177,7 +176,7 @@ public class View
 
         gamePanel = new GamePanel(client);
 
-        frame.setSize(1000, 800);
+        frame.setSize(900, 700);
         frame.setResizable(false);
 
         arrange();
