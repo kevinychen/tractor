@@ -21,7 +21,6 @@ import model.Game;
 import model.Play;
 import model.Player;
 import model.Trick;
-import client.HumanClient;
 
 public class GamePanel extends JPanel
 {
@@ -34,17 +33,16 @@ public class GamePanel extends JPanel
     private BufferedImage BIG_JOKER_IMAGE, SMALL_JOKER_IMAGE;
     private BufferedImage CARD_BACK_IMAGE;
 
-    private HumanClient client;
-
+    private HumanView view;
     private Game game;
 
     private List<Card> selectedCards;
     private CardSelectListener cardSelectListener;
 
-    public GamePanel(HumanClient client)
+    public GamePanel(HumanView view)
     {
         setBackground(Color.GREEN);
-        this.client = client;
+        this.view = view;
     }
 
     public void loadImages() throws IOException
@@ -112,7 +110,7 @@ public class GamePanel extends JPanel
             g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
 
         /* Draw hands */
-        int myIndex = players.indexOf(findWithID(client.myID(), players));
+        int myIndex = players.indexOf(findWithID(view.getPlayerID(), players));
         for (int i = 0; i < players.size(); i++)
         {
             List<Card> cards = game.getSortedHandCards(players.get(i).ID);

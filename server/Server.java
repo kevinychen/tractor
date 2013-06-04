@@ -19,6 +19,7 @@ import model.Game;
 import model.GameProperties;
 import model.Play;
 import model.Player;
+import view.View;
 
 public class Server
 {
@@ -29,14 +30,16 @@ public class Server
     private List<Player> players;
     private Map<Integer, PrintWriter> outs;
 
+    private View view;
     private Game game;
     private Timer drawingCardsTimer;
 
-    public Server()
+    public Server(View view)
     {
         currentPlayerID = 101;
         players = new ArrayList<Player>();
         outs = new HashMap<Integer, PrintWriter>();
+        this.view = view;
     }
 
     public void startServer(int port) throws IOException
@@ -147,6 +150,8 @@ public class Server
                 }
             }
         }.start();
+        
+        view.createRoom();
     }
 
     public void close()
@@ -161,6 +166,8 @@ public class Server
         {
             e.printStackTrace();
         }
+        
+        view.closeRoom();
     }
 
     protected synchronized void processMessage(Player player, String... data)
