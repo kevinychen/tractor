@@ -19,6 +19,7 @@ import model.Game;
 import model.GameProperties;
 import model.Play;
 import model.Player;
+import view.NullView;
 import view.View;
 
 public class Server
@@ -150,7 +151,7 @@ public class Server
                 }
             }
         }.start();
-        
+
         view.createRoom();
     }
 
@@ -166,7 +167,7 @@ public class Server
         {
             e.printStackTrace();
         }
-        
+
         view.closeRoom();
     }
 
@@ -183,7 +184,7 @@ public class Server
             /* STARTGAME [properties] */
             if (drawingCardsTimer != null)
                 drawingCardsTimer.cancel();
-            game = new Game(GameProperties.decode(params));
+            game = new Game(GameProperties.decode(params), new NullView());
             game.addPlayers(players);
             announce(data);
             // TODO ask other players to verify?

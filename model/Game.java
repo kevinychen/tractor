@@ -10,6 +10,7 @@ import java.util.Random;
 
 import model.Card.SUIT;
 import model.Card.VALUE;
+import view.View;
 
 public class Game
 {
@@ -57,7 +58,10 @@ public class Game
     /* Last winning play */
     private Play lastWinningPlay;
 
-    public Game(GameProperties properties)
+    /* Reference to the view */
+    private View view;
+
+    public Game(GameProperties properties, View view)
     {
         this.players = new ArrayList<Player>();
         this.properties = properties;
@@ -68,6 +72,9 @@ public class Game
         this.teams = new HashMap<Integer, Integer>();
         this.currentScores = new HashMap<Integer, Integer>();
         this.tricks = new ArrayList<Trick>();
+        this.view = view;
+
+        view.startGame(this);
     }
 
     public List<Player> getPlayers()
@@ -143,6 +150,8 @@ public class Game
             teams.put(player.ID, 0); // TODO
             currentScores.put(player.ID, 0);
         }
+
+        view.startRound();
     }
 
     public Player getCurrentPlayer()
@@ -174,6 +183,7 @@ public class Game
     {
         hands.get(playerID).addCard(deck.remove(deck.size() - 1));
         playerIndex = (playerIndex + 1) % players.size();
+        view.drawCard(playerID);
     }
 
     public void takeKittyCards()
@@ -183,6 +193,7 @@ public class Game
             hands.get(players.get(masterIndex).ID).addCard(
                     deck.remove(deck.size() - 1));
         state = State.AWAITING_KITTY;
+        view.notifyCanMakeKitty();
     }
 
     public Play getShownCards()
@@ -214,6 +225,7 @@ public class Game
     public void showCards(Play cards)
     {
         shownCards = cards;
+        view.showCards(cards);
     }
 
     public Card.SUIT getTrumpSuit()
@@ -240,6 +252,7 @@ public class Game
         state = State.AWAITING_PLAY;
         kitty = cards;
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
+        view.makeKitty(cards);
     }
 
     public List<Card> getSortedHandCards(int playerID)
@@ -348,6 +361,7 @@ public class Game
         currentTrick.addPlay(play);
         hands.get(play.getPlayerID()).playCards(play.getCards());
         playerIndex = (playerIndex + 1) % players.size();
+        view.playCards(play);
 
         if (currentTrick.numPlays() == players.size())
         {

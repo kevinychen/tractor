@@ -75,7 +75,7 @@ public class Client
 
         out = new PrintWriter(socket.getOutputStream(), true);
         request("HELLO", view.name);
-        
+
         view.joinRoom();
     }
 
@@ -89,7 +89,7 @@ public class Client
         {
             e.printStackTrace();
         }
-        
+
         view.leaveRoom();
     }
 
@@ -168,7 +168,7 @@ public class Client
     }
 
     /* Methods called after a response from the server */
-    
+
     private void processMessage(String... data)
     {
         String command = data[0];
@@ -203,15 +203,13 @@ public class Client
         else if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
-            game = new Game(GameProperties.decode(params));
+            game = new Game(GameProperties.decode(params), view);
             game.addPlayers(players);
-            view.startGame(game);
         }
         else if (command.equals("STARTROUND"))
         {
             /* STARTROUND [random seed] */
             game.startRound(Long.parseLong(params.get(0)));
-            view.startRound();
         }
         else if (command.equals("NOTIFICATION"))
         {

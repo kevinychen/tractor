@@ -171,6 +171,7 @@ public class HumanView extends View
                 }
             }
         });
+        actionButton.setVisible(false);
 
         gamePanel = new GamePanel(this);
 
@@ -291,55 +292,61 @@ public class HumanView extends View
     public void startRound()
     {
         notificationField.setText("New round started.");
+        actionButton.setText("SHOW");
+        actionButton.setVisible(true);
         frame.repaint();
     }
 
-    public void notifyCanTakeKitty()
+    public void notifyCanMakeKitty()
     {
+        if (getPlayerID() == game.getMaster().ID)
+        {
+            actionButton.setText("MAKE KITTY");
+            actionButton.setVisible(true);
+        }
+        else
+            actionButton.setVisible(false);
     }
 
-    public void drawCard(Card card)
+    public void drawCard(int playerID)
     {
+        frame.repaint();
     }
 
     public void showCards(Play play)
     {
+        frame.repaint();
+    }
+
+    public void makeKitty(Play play)
+    {
+        if (getPlayerID() == game.getCurrentPlayer().ID)
+        {
+            actionButton.setText("PLAY");
+            actionButton.setVisible(true);
+        }
+        else
+            actionButton.setVisible(false);
     }
 
     public void playCards(Play play)
     {
+        if (getPlayerID() == game.getMaster().ID)
+        {
+            actionButton.setText("PLAY");
+            actionButton.setVisible(true);
+        }
+        else
+            actionButton.setVisible(false);
     }
 
     public void notify(String notification)
     {
+        notificationField.setText(notification);
     }
 
     public void repaint()
     {
-        if (game != null && game.started())
-        {
-            actionButton.setVisible(true);
-            switch (game.getState())
-            {
-                case AWAITING_SHOW:
-                    actionButton.setText("SHOW");
-                    break;
-                case AWAITING_KITTY:
-                    if (getPlayerID() == game.getMaster().ID)
-                    {
-                        actionButton.setText("SET KITTY");
-                        break;
-                    }
-                case AWAITING_PLAY:
-                    if (getPlayerID() == game.getCurrentPlayer().ID)
-                    {
-                        actionButton.setText("PLAY");
-                        break;
-                    }
-                default:
-                    actionButton.setVisible(false);
-            }
-        }
         frame.repaint();
     }
 }
