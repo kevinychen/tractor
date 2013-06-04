@@ -22,6 +22,11 @@ public class Hand
         return new ArrayList<Card>(cards);
     }
 
+    public boolean isEmpty()
+    {
+        return cards.isEmpty();
+    }
+
     public List<Card> getCardsAfterPlay(List<Card> playedCards)
     {
         List<Card> newCards = new ArrayList<Card>(cards);

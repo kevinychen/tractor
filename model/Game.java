@@ -209,7 +209,7 @@ public class Game
             if (card.value != getTrumpValue()
                     && card.value != Card.VALUE.BIG_JOKER)
                 return false;
-            else if (!card.equals(firstCard))
+            else if (!card.dataEquals(firstCard))
                 return false;
         }
         if (firstCard.value == Card.VALUE.BIG_JOKER && shownCards != null
@@ -233,7 +233,7 @@ public class Game
         if (shownCards == null)
             return Card.SUIT.TRUMP;
 
-        return shownCards.getCards().get(0).suit;
+        return shownCards.getPrimarySuit();
     }
 
     public Play getKitty()
@@ -298,7 +298,7 @@ public class Game
         else
         {
             /* Must have same number of cards */
-            Play startingPlay = currentTrick.getPlays().get(0);
+            Play startingPlay = currentTrick.getInitialPlay();
             if (play.numCards() != startingPlay.numCards())
                 return false;
 
@@ -377,7 +377,7 @@ public class Game
     public boolean canStartNewRound()
     {
         for (Hand hand : hands.values())
-            if (!hand.getCards().isEmpty())
+            if (!hand.isEmpty())
                 return false;
 
         return true;
@@ -442,7 +442,7 @@ public class Game
 
     private Play winningPlay(Trick trick)
     {
-        Play startingPlay = trick.getPlays().get(0);
+        Play startingPlay = trick.getInitialPlay();
         Card.SUIT startingSuit = suit(startingPlay);
         List<int[]> profile = getProfile(startingPlay.getCards());
 
@@ -468,12 +468,12 @@ public class Game
 
     private Card.SUIT suit(Play play)
     {
-        Card firstCard = play.getCards().get(0);
+        Card.SUIT suit = play.getPrimarySuit();
         for (Card card : play.getCards())
-            if (suit(card) != suit(firstCard))
+            if (suit(card) != suit)
                 return null;
 
-        return suit(firstCard);
+        return suit;
     }
 
     private List<int[]> getProfile(List<Card> cards)
@@ -485,15 +485,21 @@ public class Game
             for (int j = 0; j < i; j++)
             {
                 Card otherCard = cards.get(j);
-                if (card.equals(otherCard))
+                if (card.dataEquals(otherCard))
                     profile.add(new int[]
                     { i, j, 0 });
                 else if (cardRank(card) == cardRank(otherCard) + 1)
                 {
                     /* Check if there are two occurrences of card and otherCard */
-                    if (cards.indexOf(card) < cards.lastIndexOf(card)
-                            && cards.indexOf(otherCard) < cards
-                                    .lastIndexOf(otherCard))
+                    int cardCount = 0, otherCardCount = 0;
+                    for (Card card_ : cards)
+                    {
+                        if (card_.dataEquals(card))
+                            cardCount++;
+                        if (card_.dataEquals(otherCard))
+                            otherCardCount++;
+                    }
+                    if (cardCount >= 2 && otherCardCount >= 2)
                     {
                         profile.add(new int[]
                         { i, j, 1 });
@@ -526,10 +532,10 @@ public class Game
         {
             Card card = cards.get(constraint[0]), otherCard = cards
                     .get(constraint[1]);
-            if (constraint[2] == 0 && !card.equals(otherCard))
+            if (constraint[2] == 0 && !card.dataEquals(otherCard))
                 return false;
             else if (constraint[2] == 1
-                    && cardRank(card) != cardRank(otherCard) + 1)
+                    && !(suit(card) == suit(otherCard) && cardRank(card) == cardRank(otherCard) + 1))
                 return false;
         }
         return true;
