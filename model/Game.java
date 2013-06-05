@@ -181,9 +181,10 @@ public class Game
 
     public void drawFromDeck(int playerID)
     {
-        hands.get(playerID).addCard(deck.remove(deck.size() - 1));
+        Card card = deck.remove(deck.size() - 1);
+        hands.get(playerID).addCard(card);
         playerIndex = (playerIndex + 1) % players.size();
-        view.drawCard(playerID);
+        view.drawCard(card, playerID);
     }
 
     public void takeKittyCards()
@@ -371,6 +372,7 @@ public class Game
             update(currentScores, lastWinningPlay.getPlayerID(),
                     lastWinningPlay.numPoints());
             tricks.add(new Trick());
+            view.finishTrick(currentTrick, lastWinningPlay.getPlayerID());
         }
     }
 

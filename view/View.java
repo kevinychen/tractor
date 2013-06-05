@@ -1,7 +1,9 @@
 package view;
 
+import model.Card;
 import model.Game;
 import model.Play;
+import model.Trick;
 import server.Server;
 import client.Client;
 
@@ -50,13 +52,15 @@ public abstract class View
 
     public abstract void notifyCanMakeKitty();
 
-    public abstract void drawCard(int playerID);
+    public abstract void drawCard(Card card, int playerID);
 
     public abstract void showCards(Play play);
 
     public abstract void makeKitty(Play play);
 
     public abstract void playCards(Play play);
+
+    public abstract void finishTrick(Trick trick, int winnerID);
 
     public abstract void notify(String notification);
 

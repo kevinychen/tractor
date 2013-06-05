@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -21,6 +23,7 @@ import model.Card;
 import model.Game;
 import model.GameProperties;
 import model.Play;
+import model.Trick;
 
 public class HumanView extends View
 {
@@ -308,18 +311,23 @@ public class HumanView extends View
             actionButton.setVisible(false);
     }
 
-    public void drawCard(int playerID)
+    public void drawCard(Card card, int playerID)
     {
+        gamePanel.moveCardToHand(card, playerID);
         frame.repaint();
     }
 
     public void showCards(Play play)
     {
+        for (Card card : play.getCards())
+            gamePanel.moveCardToTable(card, play.getPlayerID());
         frame.repaint();
     }
 
     public void makeKitty(Play play)
     {
+        for (Card card : play.getCards())
+            gamePanel.moveCardAway(card, play.getPlayerID());
         if (getPlayerID() == game.getCurrentPlayer().ID)
         {
             actionButton.setText("PLAY");
@@ -331,6 +339,8 @@ public class HumanView extends View
 
     public void playCards(Play play)
     {
+        for (Card card : play.getCards())
+            gamePanel.moveCardToTable(card, play.getPlayerID());
         if (getPlayerID() == game.getMaster().ID)
         {
             actionButton.setText("PLAY");
@@ -338,6 +348,20 @@ public class HumanView extends View
         }
         else
             actionButton.setVisible(false);
+    }
+
+    public void finishTrick(final Trick trick, final int winnerID)
+    {
+        /* Delay a while before drawing the trick finish. */
+        new Timer().schedule(new TimerTask()
+        {
+            public void run()
+            {
+                for (Play play : trick.getPlays())
+                    for (Card card : play.getCards())
+                        gamePanel.moveCardAway(card, winnerID);
+            }
+        }, 1000);
     }
 
     public void notify(String notification)

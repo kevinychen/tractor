@@ -3,6 +3,7 @@ package view;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -10,8 +11,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -20,14 +27,10 @@ import model.Card;
 import model.Game;
 import model.Play;
 import model.Player;
-import model.Trick;
 
 public class GamePanel extends JPanel
 {
     private static final long serialVersionUID = 7889326310244251698L;
-
-    private static final int FONT_SIZE = 14;
-    private static final int FONT_HEIGHT = 18;
 
     private BufferedImage[][] CARD_IMAGES;
     private BufferedImage BIG_JOKER_IMAGE, SMALL_JOKER_IMAGE;
@@ -36,8 +39,8 @@ public class GamePanel extends JPanel
     private HumanView view;
     private Game game;
 
+    private Map<Card, CardPosition> cardPositions;
     private List<Card> selectedCards;
-    private CardSelectListener cardSelectListener;
 
     public GamePanel(HumanView view)
     {
@@ -64,82 +67,20 @@ public class GamePanel extends JPanel
     public void setGame(Game game)
     {
         this.game = game;
+        this.cardPositions = new HashMap<Card, CardPosition>();
         this.selectedCards = new ArrayList<Card>();
         for (MouseListener listener : getMouseListeners())
             removeMouseListener(listener);
-        addMouseListener(cardSelectListener = new CardSelectListener());
-    }
-
-    public void paintComponent(Graphics g)
-    {
-        super.paintComponent(g);
-
-        if (game == null)
-            return;
-
-        int y;
-        List<Player> players = game.getPlayers();
-
-        g.setFont(new Font("Times New Roman", 0, FONT_SIZE));
-
-        /* Draw game information */
-        y = 0;
-        g.drawString("Trump value: " + game.getTrumpValue(), 10,
-                y += FONT_HEIGHT);
-        g.drawString("Trump suit: "
-                + (game.getTrumpSuit() == Card.SUIT.TRUMP ? '\u2668'
-                        : (char) (game.getTrumpSuit().ordinal() + '\u2660')),
-                10, y += FONT_HEIGHT);
-        g.drawString("Starter: " + game.getMaster().name, 10, y += FONT_HEIGHT);
-
-        /* Draw scores */
-        y = 0;
-        g.drawString("Scores", 800, y += FONT_HEIGHT);
-        Map<Integer, Integer> playerScores = game.getPlayerScores();
-        for (int playerID : playerScores.keySet())
-            g.drawString(
-                    findWithID(playerID, players).name + ": "
-                            + Card.VALUE.values()[playerScores.get(playerID)],
-                    750, y += FONT_HEIGHT);
-
-        if (!game.started())
-            return;
-
-        /* Draw deck */
-        if (game.deckHasCards())
-            g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
-
-        /* Draw hands */
-        int myIndex = players.indexOf(findWithID(view.getPlayerID(), players));
-        for (int i = 0; i < players.size(); i++)
+        addMouseListener(new CardSelectListener());
+        new Timer().schedule(new TimerTask()
         {
-            List<Card> cards = game.getSortedHandCards(players.get(i).ID);
-            if (i != myIndex && cards.size() > 18)
-                cards = cards.subList(0, 18);
-            drawCards(cards, i - myIndex, 0.7, players.size(), i != myIndex,
-                    i == myIndex, g);
-        }
-
-        /* Draw shown cards */
-        Play play = game.getShownCards();
-        if (play != null && game.getState() == Game.State.AWAITING_SHOW)
-        {
-            drawCards(play.getCards(),
-                    players.indexOf(findWithID(play.getPlayerID(), players))
-                            - myIndex, 0.4, players.size(), false, false, g);
-        }
-
-        /* Draw current trick */
-        Trick trick = game.getCurrentTrick();
-        for (Play trickPlay : trick.getPlays())
-            if (trickPlay != null)
+            public void run()
             {
-                drawCards(
-                        trickPlay.getCards(),
-                        players.indexOf(findWithID(trickPlay.getPlayerID(),
-                                players)) - myIndex, 0.4, players.size(),
-                        false, false, g);
+                for (CardPosition position : cardPositions.values())
+                    position.snap();
+                repaint();
             }
+        }, 50, 50);
     }
 
     public List<Card> resetSelected()
@@ -150,57 +91,168 @@ public class GamePanel extends JPanel
         return selected;
     }
 
-    private Player findWithID(int playerID, List<Player> players)
+    public void moveCardToHand(Card card, int playerID)
     {
-        for (Player player : players)
+        moveCard(card, handLocation(playerID, card),
+                playerID == view.getPlayerID(), 0.5);
+    }
+
+    public void moveCardToTable(Card card, int playerID)
+    {
+        moveCard(card, tableLocation(playerID, card), true, 0.3);
+    }
+
+    public void moveCardAway(Card card, int playerID)
+    {
+        moveCard(card, awayLocation(playerID), true, 0.2);
+    }
+
+    public void paintComponent(Graphics g)
+    {
+        super.paintComponent(g);
+
+        if (game == null)
+            return;
+
+        drawGameInformation(g);
+        drawGameScores(g);
+
+        if (!game.started())
+            return;
+
+        /* Draw deck */
+        if (game.deckHasCards())
+            drawDeck(g);
+
+        drawCards(g);
+    }
+
+    private void moveCard(Card card, Point point, boolean faceUp,
+            double snapRatio)
+    {
+        if (!cardPositions.containsKey(card))
+            cardPositions.put(card, new CardPosition(deckLocation(), false));
+        cardPositions.get(card).setDest(point, faceUp, snapRatio);
+    }
+
+    private void drawGameInformation(Graphics g)
+    {
+        g.setFont(new Font("Times New Roman", 0, 14));
+
+        /* Draw game information */
+        int y = 0;
+        g.drawString("Trump value: " + game.getTrumpValue(), 10, y += 18);
+        g.drawString("Trump suit: "
+                + (game.getTrumpSuit() == Card.SUIT.TRUMP ? '\u2668'
+                        : (char) (game.getTrumpSuit().ordinal() + '\u2660')),
+                10, y += 18);
+        g.drawString("Starter: " + game.getMaster().name, 10, y += 18);
+    }
+
+    private void drawGameScores(Graphics g)
+    {
+        g.setFont(new Font("Times New Roman", 0, 14));
+
+        int y = 0;
+        g.drawString("Scores", 800, y += 18);
+        Map<Integer, Integer> playerScores = game.getPlayerScores();
+        for (int playerID : playerScores.keySet())
+            g.drawString(findWithID(playerID).name + ": "
+                    + Card.VALUE.values()[playerScores.get(playerID)], 750,
+                    y += 18);
+    }
+
+    private void drawDeck(Graphics g)
+    {
+        g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
+    }
+
+    private void drawCards(Graphics g)
+    {
+        Set<Card> drawnCards = new HashSet<Card>();
+        for (Player player : game.getPlayers())
+            for (Card card : memoizeSortedHandCards(player.ID))
+            {
+                moveCardToHand(card, player.ID);
+                drawCard(card, g);
+                drawnCards.add(card);
+            }
+        for (Play play : game.getCurrentTrick().getPlays())
+            for (Card card : play.getCards())
+            {
+                moveCardToTable(card, play.getPlayerID());
+                drawCard(card, g);
+                drawnCards.add(card);
+            }
+        for (Card card : cardPositions.keySet())
+            if (!drawnCards.contains(card))
+                drawCard(card, g);
+    }
+
+    private Point deckLocation()
+    {
+        return new Point(415, 300);
+    }
+
+    private Point handLocation(int playerID, Card card)
+    {
+        List<Player> players = game.getPlayers();
+        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        int startX = (int) (450 * (1 + 0.7 * Math.sin(angle)));
+        int startY = (int) (350 * (1 + 0.7 * Math.cos(angle)));
+
+        List<Card> cards = memoizeSortedHandCards(playerID);
+        int cardIndex = cards.indexOf(card);
+        int cardDiff = playerID == view.getPlayerID() ? 14 : 9;
+        return new Point((int) (startX + cardDiff * Math.cos(angle)
+                * (cardIndex - cards.size() / 2.0) - 35),
+                (int) (startY - cardDiff * Math.sin(angle)
+                        * (cardIndex - cards.size() / 2.0) - 48));
+    }
+
+    private Point tableLocation(int playerID, Card card)
+    {
+        List<Player> players = game.getPlayers();
+        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        int startX = (int) (450 * (1 + 0.4 * Math.sin(angle)));
+        int startY = (int) (350 * (1 + 0.4 * Math.cos(angle)));
+
+        List<Card> cards = game.getCurrentTrick().getPlayByID(playerID)
+                .getCards();
+        int cardIndex = cards.indexOf(card);
+        return new Point((int) (startX + 24 * Math.cos(angle)
+                * (cardIndex - cards.size() / 2.0) - 35), (int) (startY - 24
+                * Math.sin(angle) * (cardIndex - cards.size() / 2.0) - 48));
+    }
+
+    private Point awayLocation(int playerID)
+    {
+        List<Player> players = game.getPlayers();
+        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        int startX = (int) (450 * (1 + 3 * Math.sin(angle)));
+        int startY = (int) (350 * (1 + 3 * Math.cos(angle)));
+        return new Point(startX, startY);
+    }
+
+    private int indexWithID(int playerID)
+    {
+        return game.getPlayers().indexOf(findWithID(playerID));
+    }
+
+    private Player findWithID(int playerID)
+    {
+        for (Player player : game.getPlayers())
             if (player.ID == playerID)
                 return player;
 
         return null;
     }
 
-    private void drawCards(List<Card> cards, int playerIndex,
-            double percentage, int numPlayers, boolean faceDown, boolean mine,
-            Graphics g)
+    private void drawCard(Card card, Graphics g)
     {
-        /*
-         * Draw cards of the given player. percentage refers to how far the
-         * cards are placed from the center.
-         */
-        double angle = Math.PI / 2 - (2 * Math.PI / numPlayers * playerIndex);
-        drawCards(cards, (int) (450 * (1 + percentage * Math.cos(angle))),
-                (int) (350 * (1 + percentage * Math.sin(angle))), faceDown,
-                mine, g);
-    }
-
-    private void drawCards(List<Card> cards, int x, int y, boolean faceDown,
-            boolean mine, Graphics g)
-    {
-        int cardDiff = faceDown ? Math.min(14, 100 / (cards.size() + 1)) : 14;
-        int totalX = cardDiff * (cards.size() - 1) + 71;
-        int startX = x - totalX / 2, startY = y - 48;
-        for (int i = 0; i < cards.size(); i++)
-        {
-            /* Paint selected cards slightly higher */
-            boolean selected = mine && index(cards.get(i), selectedCards) != -1;
-            drawCard(cards.get(i), startX + cardDiff * i, startY
-                    - (selected ? 20 : 0), faceDown, g);
-        }
-
-        /* Update cardSelectListener */
-        if (mine)
-        {
-            cardSelectListener.startX = startX;
-            cardSelectListener.startY = startY;
-            cardSelectListener.cardDiff = cardDiff;
-            cardSelectListener.cards = cards;
-        }
-    }
-
-    private void drawCard(Card card, int x, int y, boolean faceDown, Graphics g)
-    {
+        CardPosition position = cardPositions.get(card);
         BufferedImage image;
-        if (faceDown)
+        if (!position.faceUp())
             image = CARD_BACK_IMAGE;
         else if (card.value == Card.VALUE.BIG_JOKER)
             image = BIG_JOKER_IMAGE;
@@ -208,42 +260,46 @@ public class GamePanel extends JPanel
             image = SMALL_JOKER_IMAGE;
         else
             image = CARD_IMAGES[card.value.ordinal()][card.suit.ordinal()];
-        g.drawImage(image, x, y, null);
+        g.drawImage(image, position.currX(), position.currY(), null);
     }
 
-    private int index(Card card, List<Card> cards)
-    {
-        for (int i = 0; i < cards.size(); i++)
-            if (card == cards.get(i))
-                return i;
+    private Map<Integer, List<Card>> sortedHandCards = new HashMap<Integer, List<Card>>();
+    private Map<Integer, Long> sortedHandCardTimes = new HashMap<Integer, Long>();
 
-        return -1;
+    private List<Card> memoizeSortedHandCards(int playerID)
+    {
+        long currentTime = System.currentTimeMillis();
+        if (!sortedHandCardTimes.containsKey(playerID)
+                || currentTime - sortedHandCardTimes.get(playerID) > 100)
+        {
+            sortedHandCards.put(playerID, game.getSortedHandCards(playerID));
+            sortedHandCardTimes.put(playerID, currentTime);
+        }
+        return sortedHandCards.get(playerID);
     }
 
     private class CardSelectListener extends MouseAdapter
     {
-        int startX, startY, cardDiff;
-        List<Card> cards;
-
         @Override
         public void mouseClicked(MouseEvent e)
         {
-            if (e.getY() >= startY - 20 && e.getY() < startY + 96)
+            List<Card> cards = memoizeSortedHandCards(view.getPlayerID());
+            Collections.reverse(cards);
+            for (Card card : cards)
             {
-                int cardIndex = (e.getX() - startX) / cardDiff;
-                if (cardIndex < 0 || cardIndex > cards.size() + 5)
-                    return;
-                if (cardIndex >= cards.size())
-                    cardIndex = cards.size() - 1;
-
-                /* Toggle selected card state */
-                int selectedIndex = index(cards.get(cardIndex), selectedCards);
-                if (selectedIndex == -1)
-                    selectedCards.add(cards.get(cardIndex));
-                else
-                    selectedCards.remove(selectedIndex);
-                repaint();
+                CardPosition position = cardPositions.get(card);
+                if (e.getX() >= position.currX()
+                        && e.getX() < position.currX() + 71
+                        && e.getY() >= position.currY()
+                        && e.getY() < position.currY() + 96)
+                {
+                    if (selectedCards.contains(card))
+                        selectedCards.remove(card);
+                    else
+                        selectedCards.add(card);
+                }
             }
+            repaint();
         }
     }
 }

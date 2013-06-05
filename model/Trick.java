@@ -22,6 +22,15 @@ public class Trick
         return new ArrayList<Play>(plays);
     }
 
+    public Play getPlayByID(int playerID)
+    {
+        for (Play play : plays)
+            if (play.getPlayerID() == playerID)
+                return play;
+
+        return null;
+    }
+
     public int numPlays()
     {
         return plays.size();

@@ -5,18 +5,32 @@ import model.Game;
 import model.Play;
 import model.Trick;
 
-public class NullView extends View
+public class DummyView extends View
 {
-    public NullView()
+    public DummyView(String name)
     {
-        super("");
+        super(name);
     }
 
     @Override
     public void start()
     {
-        // TODO Auto-generated method stub
-
+        new Thread()
+        {
+            public void run()
+            {
+                try
+                {
+                    Thread.sleep(5000);
+                    client.connect(3003, new byte[]
+                    { 127, 0, 0, 1 });
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
     @Override
