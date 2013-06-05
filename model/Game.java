@@ -256,23 +256,11 @@ public class Game
         view.makeKitty(cards);
     }
 
-    public List<Card> getSortedHandCards(int playerID)
+    public Hand getHand(int playerID)
     {
         if (hands.get(playerID) == null)
             return null;
-        List<Card> cards = hands.get(playerID).getCards();
-        Collections.sort(cards, new Comparator<Card>()
-        {
-            public int compare(Card card1, Card card2)
-            {
-                int score1 = (isTrump(card1) ? 100 : card1.suit.ordinal() * 20)
-                        + cardRank(card1);
-                int score2 = (isTrump(card2) ? 100 : card2.suit.ordinal() * 20)
-                        + cardRank(card2);
-                return score1 - score2;
-            }
-        });
-        return cards;
+        return hands.get(playerID);
     }
 
     public Trick getCurrentTrick()
@@ -354,6 +342,21 @@ public class Game
             if (cardRank(card) < cardRank(minCard))
                 minCard = card;
         return minCard;
+    }
+
+    public void sortCards(List<Card> cards)
+    {
+        Collections.sort(cards, new Comparator<Card>()
+        {
+            public int compare(Card card1, Card card2)
+            {
+                int score1 = (isTrump(card1) ? 100 : card1.suit.ordinal() * 20)
+                        + cardRank(card1);
+                int score2 = (isTrump(card2) ? 100 : card2.suit.ordinal() * 20)
+                        + cardRank(card2);
+                return score1 - score2;
+            }
+        });
     }
 
     public void play(Play play)

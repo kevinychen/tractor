@@ -25,7 +25,6 @@ import javax.swing.JPanel;
 
 import model.Card;
 import model.Game;
-import model.Play;
 import model.Player;
 
 public class GamePanel extends JPanel
@@ -40,7 +39,6 @@ public class GamePanel extends JPanel
     private Game game;
 
     private Map<Card, CardPosition> cardPositions;
-    private List<Card> selectedCards;
 
     public GamePanel(HumanView view)
     {
@@ -68,7 +66,6 @@ public class GamePanel extends JPanel
     {
         this.game = game;
         this.cardPositions = new HashMap<Card, CardPosition>();
-        this.selectedCards = new ArrayList<Card>();
         for (MouseListener listener : getMouseListeners())
             removeMouseListener(listener);
         addMouseListener(new CardSelectListener());
@@ -85,10 +82,18 @@ public class GamePanel extends JPanel
 
     public List<Card> resetSelected()
     {
-        List<Card> selected = new ArrayList<Card>(selectedCards);
-        selectedCards.clear();
+        List<Card> selectedCards = new ArrayList<Card>();
+        for (Card card : cardPositions.keySet())
+        {
+            CardPosition position = cardPositions.get(card);
+            if (position.selected())
+            {
+                position.setSelected(false);
+                selectedCards.add(card);
+            }
+        }
         repaint();
-        return selected;
+        return selectedCards;
     }
 
     public void moveCardToHand(Card card, int playerID)
@@ -171,19 +176,22 @@ public class GamePanel extends JPanel
     {
         Set<Card> drawnCards = new HashSet<Card>();
         for (Player player : game.getPlayers())
+        {
             for (Card card : memoizeSortedHandCards(player.ID))
+                if (game.getShownCards() == null
+                        || !game.getShownCards().getCards().contains(card))
+                {
+                    moveCardToHand(card, player.ID);
+                    drawCard(card, g);
+                    drawnCards.add(card);
+                }
+            for (Card card : memoizeTableCards(player.ID))
             {
-                moveCardToHand(card, player.ID);
+                moveCardToTable(card, player.ID);
                 drawCard(card, g);
                 drawnCards.add(card);
             }
-        for (Play play : game.getCurrentTrick().getPlays())
-            for (Card card : play.getCards())
-            {
-                moveCardToTable(card, play.getPlayerID());
-                drawCard(card, g);
-                drawnCards.add(card);
-            }
+        }
         for (Card card : cardPositions.keySet())
             if (!drawnCards.contains(card))
                 drawCard(card, g);
@@ -217,8 +225,7 @@ public class GamePanel extends JPanel
         int startX = (int) (450 * (1 + 0.4 * Math.sin(angle)));
         int startY = (int) (350 * (1 + 0.4 * Math.cos(angle)));
 
-        List<Card> cards = game.getCurrentTrick().getPlayByID(playerID)
-                .getCards();
+        List<Card> cards = memoizeTableCards(playerID);
         int cardIndex = cards.indexOf(card);
         return new Point((int) (startX + 24 * Math.cos(angle)
                 * (cardIndex - cards.size() / 2.0) - 35), (int) (startY - 24
@@ -260,7 +267,8 @@ public class GamePanel extends JPanel
             image = SMALL_JOKER_IMAGE;
         else
             image = CARD_IMAGES[card.value.ordinal()][card.suit.ordinal()];
-        g.drawImage(image, position.currX(), position.currY(), null);
+        int y = position.selected() ? position.currY() - 20 : position.currY();
+        g.drawImage(image, position.currX(), y, null);
     }
 
     private Map<Integer, List<Card>> sortedHandCards = new HashMap<Integer, List<Card>>();
@@ -272,10 +280,37 @@ public class GamePanel extends JPanel
         if (!sortedHandCardTimes.containsKey(playerID)
                 || currentTime - sortedHandCardTimes.get(playerID) > 100)
         {
-            sortedHandCards.put(playerID, game.getSortedHandCards(playerID));
+            List<Card> cards = game.getHand(playerID).getCards();
+            game.sortCards(cards);
+            sortedHandCards.put(playerID, cards);
             sortedHandCardTimes.put(playerID, currentTime);
         }
         return sortedHandCards.get(playerID);
+    }
+
+    private Map<Integer, List<Card>> tableCards = new HashMap<Integer, List<Card>>();
+    private Map<Integer, Long> tableCardTimes = new HashMap<Integer, Long>();
+
+    private List<Card> memoizeTableCards(int playerID)
+    {
+        long currentTime = System.currentTimeMillis();
+        if (!tableCardTimes.containsKey(playerID)
+                || currentTime - tableCardTimes.get(playerID) > 100)
+        {
+            List<Card> cards;
+            if (game.getState() == Game.State.AWAITING_PLAY)
+                cards = game.getCurrentTrick().getPlayByID(playerID).getCards();
+            else if (game.getShownCards() != null
+                    && game.getShownCards().getPlayerID() == playerID)
+                cards = game.getShownCards().getCards();
+            else
+                cards = Collections.emptyList();
+            cards = new ArrayList<Card>(cards);
+            game.sortCards(cards);
+            tableCards.put(playerID, cards);
+            tableCardTimes.put(playerID, currentTime);
+        }
+        return tableCards.get(playerID);
     }
 
     private class CardSelectListener extends MouseAdapter
@@ -283,7 +318,8 @@ public class GamePanel extends JPanel
         @Override
         public void mouseClicked(MouseEvent e)
         {
-            List<Card> cards = memoizeSortedHandCards(view.getPlayerID());
+            List<Card> cards = new ArrayList<Card>(
+                    memoizeSortedHandCards(view.getPlayerID()));
             Collections.reverse(cards);
             for (Card card : cards)
             {
@@ -293,10 +329,8 @@ public class GamePanel extends JPanel
                         && e.getY() >= position.currY()
                         && e.getY() < position.currY() + 96)
                 {
-                    if (selectedCards.contains(card))
-                        selectedCards.remove(card);
-                    else
-                        selectedCards.add(card);
+                    position.setSelected(!position.selected());
+                    break;
                 }
             }
             repaint();
