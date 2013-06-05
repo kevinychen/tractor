@@ -335,6 +335,7 @@ public class HumanView extends View
         }
         else
             actionButton.setVisible(false);
+        frame.repaint();
     }
 
     public void playCards(Play play)

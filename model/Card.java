@@ -24,11 +24,37 @@ public final class Card
 
     public final VALUE value;
     public final SUIT suit;
+    public final int ID;
 
-    public Card(VALUE value, SUIT suit)
+    public Card(VALUE value, SUIT suit, int ID)
     {
         this.value = value;
         this.suit = suit;
+        this.ID = ID;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ID;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Card other = (Card) obj;
+        if (ID != other.ID)
+            return false;
+        return true;
     }
 
     public boolean dataEquals(Card other)
@@ -45,13 +71,14 @@ public final class Card
     /* Encode and decode methods for cards */
     public List<String> encode()
     {
-        return Arrays.asList(value.toString(), suit.toString());
+        return Arrays.asList(value.toString(), suit.toString(),
+                Integer.toString(ID));
     }
 
     public static Card decode(List<String> data)
     {
         return new Card(Card.VALUE.valueOf(data.get(0)), Card.SUIT.valueOf(data
-                .get(1)));
+                .get(1)), Integer.parseInt(data.get(2)));
     }
 
     public static List<String> encodeCards(List<Card> cards)
@@ -66,8 +93,8 @@ public final class Card
     public static List<Card> decodeCards(List<String> data)
     {
         List<Card> cards = new ArrayList<Card>();
-        for (int i = 1; i < data.size(); i += 2)
-            cards.add(decode(data.subList(i, i + 2)));
+        for (int i = 1; i < data.size(); i += 3)
+            cards.add(decode(data.subList(i, i + 3)));
         return cards;
     }
 }

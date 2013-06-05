@@ -25,6 +25,7 @@ import javax.swing.JPanel;
 
 import model.Card;
 import model.Game;
+import model.Play;
 import model.Player;
 
 public class GamePanel extends JPanel
@@ -178,13 +179,11 @@ public class GamePanel extends JPanel
         for (Player player : game.getPlayers())
         {
             for (Card card : memoizeSortedHandCards(player.ID))
-                if (game.getShownCards() == null
-                        || !game.getShownCards().getCards().contains(card))
-                {
-                    moveCardToHand(card, player.ID);
-                    drawCard(card, g);
-                    drawnCards.add(card);
-                }
+            {
+                moveCardToHand(card, player.ID);
+                drawCard(card, g);
+                drawnCards.add(card);
+            }
             for (Card card : memoizeTableCards(player.ID))
             {
                 moveCardToTable(card, player.ID);
@@ -192,9 +191,6 @@ public class GamePanel extends JPanel
                 drawnCards.add(card);
             }
         }
-        for (Card card : cardPositions.keySet())
-            if (!drawnCards.contains(card))
-                drawCard(card, g);
     }
 
     private Point deckLocation()
@@ -297,14 +293,16 @@ public class GamePanel extends JPanel
         if (!tableCardTimes.containsKey(playerID)
                 || currentTime - tableCardTimes.get(playerID) > 100)
         {
-            List<Card> cards;
+            List<Card> cards = Collections.emptyList();
             if (game.getState() == Game.State.AWAITING_PLAY)
-                cards = game.getCurrentTrick().getPlayByID(playerID).getCards();
+            {
+                Play play = game.getCurrentTrick().getPlayByID(playerID);
+                if (play != null)
+                    cards = play.getCards();
+            }
             else if (game.getShownCards() != null
                     && game.getShownCards().getPlayerID() == playerID)
                 cards = game.getShownCards().getCards();
-            else
-                cards = Collections.emptyList();
             cards = new ArrayList<Card>(cards);
             game.sortCards(cards);
             tableCards.put(playerID, cards);

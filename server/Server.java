@@ -220,7 +220,7 @@ public class Server
                             drawingCardsTimer.cancel();
                         }
                     }
-                }, 1000, 250);
+                }, 1000, 100);
             }
             // TODO ask other players to verify?
         }

@@ -122,13 +122,14 @@ public class Game
     {
         /* make deck */
         deck = new ArrayList<Card>();
+        int cardID = 101;
         for (int deckNum = 0; deckNum < properties.numDecks; deckNum++)
         {
             for (VALUE value : Card.values)
                 for (SUIT suit : Card.suits)
-                    deck.add(new Card(value, suit));
-            deck.add(new Card(Card.VALUE.SMALL_JOKER, Card.SUIT.TRUMP));
-            deck.add(new Card(Card.VALUE.BIG_JOKER, Card.SUIT.TRUMP));
+                    deck.add(new Card(value, suit, cardID++));
+            deck.add(new Card(Card.VALUE.SMALL_JOKER, Card.SUIT.TRUMP, cardID++));
+            deck.add(new Card(Card.VALUE.BIG_JOKER, Card.SUIT.TRUMP, cardID++));
         }
         Collections.shuffle(deck, new Random(randomSeed));
 
@@ -225,7 +226,9 @@ public class Game
 
     public void showCards(Play cards)
     {
+        returnShownCards();
         shownCards = cards;
+        hands.get(cards.getPlayerID()).playCards(cards.getCards());
         view.showCards(cards);
     }
 
@@ -250,6 +253,7 @@ public class Game
 
     public void makeKitty(Play cards)
     {
+        returnShownCards();
         state = State.AWAITING_PLAY;
         kitty = cards;
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
@@ -438,6 +442,13 @@ public class Game
         for (Player player : players)
             if (teams.get(player) == winningTeam)
                 update(playerScores, player.ID, 1);
+    }
+
+    private void returnShownCards()
+    {
+        if (shownCards != null)
+            for (Card card : shownCards.getCards())
+                hands.get(shownCards.getPlayerID()).addCard(card);
     }
 
     private void update(Map<Integer, Integer> map, int key, int dValue)
