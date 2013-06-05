@@ -329,27 +329,14 @@ public class HumanView extends View
     {
         for (Card card : play.getCards())
             gamePanel.moveCardAway(card, play.getPlayerID());
-        if (getPlayerID() == game.getCurrentPlayer().ID)
-        {
-            actionButton.setText("PLAY");
-            actionButton.setVisible(true);
-        }
-        else
-            actionButton.setVisible(false);
-        frame.repaint();
+        beforeTurn();
     }
 
     public void playCards(Play play)
     {
         for (Card card : play.getCards())
             gamePanel.moveCardToTable(card, play.getPlayerID());
-        if (getPlayerID() == game.getCurrentPlayer().ID)
-        {
-            actionButton.setText("PLAY");
-            actionButton.setVisible(true);
-        }
-        else
-            actionButton.setVisible(false);
+        beforeTurn();
     }
 
     public void finishTrick(final Trick trick, final int winnerID)
@@ -368,11 +355,33 @@ public class HumanView extends View
 
     public void notify(String notification)
     {
+        // TODO make this a temporary message.
         notificationField.setText(notification);
     }
 
     public void repaint()
     {
         frame.repaint();
+    }
+
+    private void beforeTurn()
+    {
+        if (game.canStartNewRound())
+        {
+            notificationField.setText("Click \"Start a New Round\".");
+            actionButton.setVisible(false);
+        }
+        else if (getPlayerID() == game.getCurrentPlayer().ID)
+        {
+            notificationField.setText("Your turn.");
+            actionButton.setText("PLAY");
+            actionButton.setVisible(true);
+        }
+        else
+        {
+            notificationField
+                    .setText(game.getCurrentPlayer().name + "'s turn.");
+            actionButton.setVisible(false);
+        }
     }
 }

@@ -214,6 +214,8 @@ public class Game
             else if (!card.dataEquals(firstCard))
                 return false;
         }
+        if (isShownCardsStrengthening(cards))
+            return true;
         if (firstCard.value == Card.VALUE.BIG_JOKER && shownCards != null
                 && cards.numCards() < shownCards.numCards())
             return false;
@@ -226,8 +228,17 @@ public class Game
 
     public void showCards(Play cards)
     {
-        returnShownCards();
-        shownCards = cards;
+        if (isShownCardsStrengthening(cards))
+        {
+            List<Card> strengthenedCards = new ArrayList<Card>(shownCards.getCards());
+            strengthenedCards.addAll(cards.getCards());
+            shownCards = new Play(shownCards.getPlayerID(), strengthenedCards);
+        }
+        else
+        {
+            returnShownCards();
+            shownCards = cards;
+        }
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
         view.showCards(cards);
     }
@@ -442,6 +453,14 @@ public class Game
         for (Player player : players)
             if (teams.get(player) == winningTeam)
                 update(playerScores, player.ID, 1);
+    }
+
+    private boolean isShownCardsStrengthening(Play cards)
+    {
+        return shownCards != null
+                && shownCards.getPlayerID() == cards.getPlayerID()
+                && shownCards.getPrimaryCard().dataEquals(
+                        cards.getPrimaryCard());
     }
 
     private void returnShownCards()

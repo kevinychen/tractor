@@ -59,8 +59,13 @@ public class Play
         return numPoints;
     }
 
+    public Card getPrimaryCard()
+    {
+        return cards.get(0);
+    }
+
     public Card.SUIT getPrimarySuit()
     {
-        return cards.get(0).suit;
+        return getPrimaryCard().suit;
     }
 }
