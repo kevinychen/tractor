@@ -230,7 +230,8 @@ public class Game
     {
         if (isShownCardsStrengthening(cards))
         {
-            List<Card> strengthenedCards = new ArrayList<Card>(shownCards.getCards());
+            List<Card> strengthenedCards = new ArrayList<Card>(
+                    shownCards.getCards());
             strengthenedCards.addAll(cards.getCards());
             shownCards = new Play(shownCards.getPlayerID(), strengthenedCards);
         }
@@ -328,11 +329,20 @@ public class Game
             return false;
 
         List<int[]> profile = getProfile(play.getCards());
-        boolean[] partOfProfile = new boolean[play.numCards()];
+
+        /* perform union find on profile to ensure that all cards are one group */
+        int[] groups = new int[play.numCards()];
+        for (int i = 0; i < groups.length; i++)
+            groups[i] = i;
         for (int[] constraint : profile)
-            partOfProfile[constraint[0]] = partOfProfile[constraint[1]] = true;
-        for (boolean isPartOfProfile : partOfProfile)
-            if (!isPartOfProfile)
+        {
+            int group = groups[constraint[1]];
+            for (int i = 0; i < groups.length; i++)
+                if (groups[i] == group)
+                    groups[i] = groups[constraint[0]];
+        }
+        for (int group : groups)
+            if (group != groups[0])
                 return true;
 
         return false;
@@ -486,7 +496,7 @@ public class Game
          * play
          */
         Play bestPlay = startingPlay;
-        for (Play play : trick.getPlays())
+        for (Play play : trick.getPlays().subList(1, trick.numPlays()))
             if (suit(play) == startingSuit || suit(play) == Card.SUIT.TRUMP)
             {
                 List<List<Card>> permutations = new ArrayList<List<Card>>();
@@ -503,7 +513,7 @@ public class Game
 
     private Card.SUIT suit(Play play)
     {
-        Card.SUIT suit = play.getPrimarySuit();
+        Card.SUIT suit = suit(play.getPrimaryCard());
         for (Card card : play.getCards())
             if (suit(card) != suit)
                 return null;
