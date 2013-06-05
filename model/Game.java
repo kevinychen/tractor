@@ -82,6 +82,11 @@ public class Game
         return new ArrayList<Player>(players);
     }
 
+    public int numPlayers()
+    {
+        return players.size();
+    }
+
     public void addPlayer(Player player)
     {
         players.add(player);
@@ -277,6 +282,11 @@ public class Game
         if (hands.get(playerID) == null)
             return null;
         return hands.get(playerID);
+    }
+
+    public Map<Integer, Integer> getCurrentScores()
+    {
+        return new HashMap<Integer, Integer>(currentScores);
     }
 
     public Trick getCurrentTrick()

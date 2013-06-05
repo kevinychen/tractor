@@ -2,6 +2,7 @@ package view;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
@@ -126,6 +127,8 @@ public class GamePanel extends JPanel
         if (!game.started())
             return;
 
+        drawRoundScores(g);
+
         /* Draw deck */
         if (game.deckHasCards())
             drawDeck(g);
@@ -144,28 +147,52 @@ public class GamePanel extends JPanel
     private void drawGameInformation(Graphics g)
     {
         g.setFont(new Font("Times New Roman", 0, 14));
+        FontMetrics fm = g.getFontMetrics();
+        int lineDiff = fm.getHeight() + 4;
 
         /* Draw game information */
         int y = 0;
-        g.drawString("Trump value: " + game.getTrumpValue(), 10, y += 18);
+        g.drawString("Trump value: " + game.getTrumpValue(), 10, y += lineDiff);
         g.drawString("Trump suit: "
                 + (game.getTrumpSuit() == Card.SUIT.TRUMP ? '\u2668'
                         : (char) (game.getTrumpSuit().ordinal() + '\u2660')),
-                10, y += 18);
-        g.drawString("Starter: " + game.getMaster().name, 10, y += 18);
+                10, y += lineDiff);
+        g.drawString("Starter: " + game.getMaster().name, 10, y += lineDiff);
     }
 
     private void drawGameScores(Graphics g)
     {
         g.setFont(new Font("Times New Roman", 0, 14));
+        FontMetrics fm = g.getFontMetrics();
+        int lineDiff = fm.getHeight() + 4;
 
         int y = 0;
-        g.drawString("Scores", 800, y += 18);
+        String s = "Scores";
+        g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
         Map<Integer, Integer> playerScores = game.getPlayerScores();
         for (int playerID : playerScores.keySet())
-            g.drawString(findWithID(playerID).name + ": "
-                    + Card.VALUE.values()[playerScores.get(playerID)], 750,
-                    y += 18);
+        {
+            s = findWithID(playerID).name + ": "
+                    + Card.VALUE.values()[playerScores.get(playerID)];
+            g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
+        }
+    }
+
+    private void drawRoundScores(Graphics g)
+    {
+        g.setFont(new Font("Times New Roman", 0, 14));
+        FontMetrics fm = g.getFontMetrics();
+        int lineDiff = fm.getHeight() + 4;
+
+        // TODO change to team scores
+        int y = 640 - lineDiff * game.numPlayers();
+        Map<Integer, Integer> currentScores = game.getCurrentScores();
+        for (int playerID : currentScores.keySet())
+        {
+            String s = findWithID(playerID).name + ": "
+                    + currentScores.get(playerID);
+            g.drawString(s, 10, y += lineDiff);
+        }
     }
 
     private void drawDeck(Graphics g)
