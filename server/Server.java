@@ -184,7 +184,7 @@ public class Server
             /* STARTGAME [properties] */
             if (drawingCardsTimer != null)
                 drawingCardsTimer.cancel();
-            game = new Game(GameProperties.decode(params), new NullView());
+            game = new Game(GameProperties.decode(params), new NullView(view.name + " [Server]"));
             game.addPlayers(players);
             announce(data);
             // TODO ask other players to verify?

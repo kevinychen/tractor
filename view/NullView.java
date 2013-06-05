@@ -7,9 +7,9 @@ import model.Trick;
 
 public class NullView extends View
 {
-    public NullView()
+    public NullView(String name)
     {
-        super("");
+        super(name);
     }
 
     @Override
