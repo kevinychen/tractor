@@ -195,7 +195,7 @@ public class Game
             hands.get(players.get(masterIndex).ID).addCard(
                     deck.remove(deck.size() - 1));
         state = State.AWAITING_KITTY;
-        view.notifyCanMakeKitty();
+        view.notifyCanMakeKitty(kittySize());
     }
 
     public Play getShownCards()

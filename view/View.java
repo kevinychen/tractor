@@ -50,7 +50,7 @@ public abstract class View
 
     public abstract void startRound();
 
-    public abstract void notifyCanMakeKitty();
+    public abstract void notifyCanMakeKitty(int kittySize);
 
     public abstract void drawCard(Card card, int playerID);
 

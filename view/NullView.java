@@ -76,7 +76,7 @@ public class NullView extends View
     }
 
     @Override
-    public void notifyCanMakeKitty()
+    public void notifyCanMakeKitty(int kittySize)
     {
         // TODO Auto-generated method stub
 

@@ -232,8 +232,8 @@ public class GamePanel extends JPanel
     {
         List<Player> players = game.getPlayers();
         double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
-        int startX = (int) (450 * (1 + 3 * Math.sin(angle)));
-        int startY = (int) (350 * (1 + 3 * Math.cos(angle)));
+        int startX = (int) (450 * (1 + 2 * Math.sin(angle)));
+        int startY = (int) (350 * (1 + 2 * Math.cos(angle)));
         return new Point(startX, startY);
     }
 

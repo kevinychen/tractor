@@ -300,10 +300,11 @@ public class HumanView extends View
         frame.repaint();
     }
 
-    public void notifyCanMakeKitty()
+    public void notifyCanMakeKitty(int kittySize)
     {
         if (getPlayerID() == game.getMaster().ID)
         {
+            notificationField.setText("Select " + kittySize + " cards.");
             actionButton.setText("MAKE KITTY");
             actionButton.setVisible(true);
         }
@@ -342,7 +343,7 @@ public class HumanView extends View
     {
         for (Card card : play.getCards())
             gamePanel.moveCardToTable(card, play.getPlayerID());
-        if (getPlayerID() == game.getMaster().ID)
+        if (getPlayerID() == game.getCurrentPlayer().ID)
         {
             actionButton.setText("PLAY");
             actionButton.setVisible(true);
