@@ -203,6 +203,7 @@ public class GamePanel extends JPanel
     private void drawCards(Graphics g)
     {
         Set<Card> drawnCards = new HashSet<Card>();
+        // TODO paint own cards last, so that they are on top.
         for (Player player : game.getPlayers())
         {
             for (Card card : memoizeSortedHandCards(player.ID))

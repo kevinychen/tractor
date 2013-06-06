@@ -375,7 +375,7 @@ public class Game
 
     public Card minCard(Play play)
     {
-        Card minCard = play.getCards().get(0);
+        Card minCard = play.getPrimaryCard();
         for (Card card : play.getCards())
             if (cardRank(card) < cardRank(minCard))
                 minCard = card;

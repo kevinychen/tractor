@@ -90,25 +90,7 @@ public class Server
         {
             try
             {
-                synchronized (Server.this)
-                {
-                    ObjectOutputStream out = new ObjectOutputStream(
-                            incoming.getOutputStream());
-                    in = new ObjectInputStream(incoming.getInputStream());
-
-                    player = makePlayer();
-                    if (player == null)
-                        return;
-
-                    outs.put(player.ID, out);
-                    for (Player player : players)
-                        message(this.player, "ADDPLAYER", player);
-                    players.add(player);
-                    if (game != null)
-                        game.addPlayer(player);
-                    announce("ADDPLAYER", player);
-                    message(player, "YOU", player.ID);
-                }
+                initialize();
 
                 while (true)
                     processMessage(player, (Object[]) in.readObject());
@@ -133,17 +115,28 @@ public class Server
             }
         }
 
-        Player makePlayer() throws Exception
+        void initialize() throws Exception
         {
-            /* HELLO [name] */
-            Object[] decoded = (Object[]) in.readObject();
-            if (decoded.length != 2 || !decoded[0].equals("HELLO"))
+            synchronized (Server.this)
             {
-                return null;
-            }
-            else
-            {
-                return new Player(currentPlayerID++, (String) decoded[1]);
+                ObjectOutputStream out = new ObjectOutputStream(
+                        incoming.getOutputStream());
+                in = new ObjectInputStream(incoming.getInputStream());
+
+                /* HELLO [name] */
+                Object[] playerInfo = (Object[]) in.readObject();
+                if (playerInfo.length != 2 || !playerInfo[0].equals("HELLO"))
+                    throw new IllegalArgumentException();
+                player = new Player(currentPlayerID++, (String) playerInfo[1]);
+
+                outs.put(player.ID, out);
+                for (Player player : players)
+                    message(this.player, "ADDPLAYER", player);
+                players.add(player);
+                if (game != null)
+                    game.addPlayer(player);
+                announce("ADDPLAYER", player);
+                message(player, "YOU", player.ID);
             }
         }
     }
@@ -238,14 +231,18 @@ public class Server
             else if (command.equals("PLAY"))
             {
                 /* PLAY [cards] */
-                if (game.isSpecialPlay(play) && !game.allowedSpecialPlay(play))
+                if (game.canPlay(play))
                 {
-                    message(player, "NOTIFICATION", "Invalid special play.");
-                    Card minCard = game.minCard(play);
-                    play = new Play(player.ID, Arrays.asList(minCard));
+                    if (game.isSpecialPlay(play)
+                            && !game.allowedSpecialPlay(play))
+                    {
+                        message(player, "NOTIFICATION", "Invalid special play.");
+                        Card minCard = game.minCard(play);
+                        play = new Play(player.ID, Arrays.asList(minCard));
+                    }
+                    game.play(play);
+                    announce(command, play);
                 }
-                game.play(play);
-                announce(data);
             }
         }
     }

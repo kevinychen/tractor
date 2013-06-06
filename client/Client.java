@@ -88,19 +88,19 @@ public class Client
 
     /* Methods called by controller */
 
-    public void requestStartGame(GameProperties properties)
+    public synchronized void requestStartGame(GameProperties properties)
     {
         request("STARTGAME", properties);
         view.requestStartGame();
     }
 
-    public void requestStartRound()
+    public synchronized void requestStartRound()
     {
         request("STARTROUND");
         view.requestStartRound();
     }
 
-    public void requestShowCards(List<Card> cards)
+    public synchronized void requestShowCards(List<Card> cards)
     {
         Play play = new Play(view.getPlayerID(), cards);
         if (game.canShowCards(play))
@@ -109,7 +109,7 @@ public class Client
             view.notify("Invalid show.");
     }
 
-    public void requestMakeKitty(List<Card> cards)
+    public synchronized void requestMakeKitty(List<Card> cards)
     {
         Play play = new Play(view.getPlayerID(), cards);
         if (game.canMakeKitty(play))
@@ -118,7 +118,7 @@ public class Client
             view.notify("Incorrect number of cards.");
     }
 
-    public void requestPlayCards(List<Card> cards)
+    public synchronized void requestPlayCards(List<Card> cards)
     {
         Play play = new Play(view.getPlayerID(), cards);
         if (game.canPlay(play))
@@ -127,7 +127,7 @@ public class Client
             view.notify("Invalid play.");
     }
 
-    private void request(Object... args)
+    private synchronized void request(Object... args)
     {
         try
         {
@@ -141,7 +141,7 @@ public class Client
 
     /* Called after a response from the server */
 
-    private void processMessage(Object... data)
+    private synchronized void processMessage(Object... data)
     {
         String command = (String) data[0];
 
