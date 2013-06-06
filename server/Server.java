@@ -1,9 +1,8 @@
 package server;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -29,7 +28,7 @@ public class Server
 
     private int currentPlayerID;
     private List<Player> players;
-    private Map<Integer, PrintWriter> outs;
+    private Map<Integer, ObjectOutputStream> outs;
 
     private View view;
     private Game game;
@@ -39,7 +38,7 @@ public class Server
     {
         currentPlayerID = 101;
         players = new ArrayList<Player>();
-        outs = new HashMap<Integer, PrintWriter>();
+        outs = new HashMap<Integer, ObjectOutputStream>();
         this.view = view;
     }
 
@@ -59,86 +58,7 @@ public class Server
                         final Socket incoming = serverSocket.accept();
                         sockets.add(incoming);
 
-                        final BufferedReader in = new BufferedReader(
-                                new InputStreamReader(incoming.getInputStream()));
-
-                        new Thread()
-                        {
-                            Player player;
-
-                            public void run()
-                            {
-                                try
-                                {
-                                    synchronized (Server.this)
-                                    {
-                                        player = makePlayer();
-                                        if (player == null)
-                                            return;
-
-                                        outs.put(player.ID, new PrintWriter(
-                                                incoming.getOutputStream(),
-                                                true));
-                                        for (Player player : players)
-                                            message(this.player,
-                                                    "ADDPLAYER",
-                                                    Integer.toString(player.ID),
-                                                    player.name);
-                                        players.add(player);
-                                        if (game != null)
-                                            game.addPlayer(player);
-                                        announce("ADDPLAYER",
-                                                Integer.toString(player.ID),
-                                                player.name);
-                                        message(player, "YOU",
-                                                Integer.toString(player.ID));
-                                    }
-
-                                    while (true)
-                                    {
-                                        String line = in.readLine();
-                                        if (line == null)
-                                            break;
-                                        processMessage(player, parse(line));
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    e.printStackTrace();
-                                }
-                                finally
-                                {
-                                    if (player != null)
-                                    {
-                                        synchronized (Server.this)
-                                        {
-                                            players.remove(player);
-                                            outs.remove(player);
-                                            if (game != null)
-                                                game.removePlayer(player);
-                                            announce("REMOVEPLAYER",
-                                                    Integer.toString(player.ID));
-                                        }
-                                    }
-                                }
-                            }
-
-                            Player makePlayer() throws IOException
-                            {
-                                /* HELLO [name] */
-                                String[] decoded = parse(in.readLine());
-                                if (decoded.length != 2
-                                        || !decoded[0].equals("HELLO"))
-                                {
-                                    return null;
-                                }
-                                else
-                                {
-                                    return new Player(currentPlayerID++,
-                                            decoded[1]);
-                                }
-                            }
-                        }.start();
+                        new ListenerThread(incoming).start();
                     }
                 }
                 catch (IOException e)
@@ -153,6 +73,79 @@ public class Server
         }.start();
 
         view.createRoom();
+    }
+
+    private class ListenerThread extends Thread
+    {
+        private Socket incoming;
+        private ObjectInputStream in;
+        private Player player;
+
+        ListenerThread(Socket incoming)
+        {
+            this.incoming = incoming;
+        }
+
+        public void run()
+        {
+            try
+            {
+                synchronized (Server.this)
+                {
+                    ObjectOutputStream out = new ObjectOutputStream(
+                            incoming.getOutputStream());
+                    in = new ObjectInputStream(incoming.getInputStream());
+
+                    player = makePlayer();
+                    if (player == null)
+                        return;
+
+                    outs.put(player.ID, out);
+                    for (Player player : players)
+                        message(this.player, "ADDPLAYER", player);
+                    players.add(player);
+                    if (game != null)
+                        game.addPlayer(player);
+                    announce("ADDPLAYER", player);
+                    message(player, "YOU", player.ID);
+                }
+
+                while (true)
+                    processMessage(player, (Object[]) in.readObject());
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            finally
+            {
+                if (player != null)
+                {
+                    synchronized (Server.this)
+                    {
+                        players.remove(player);
+                        outs.remove(player);
+                        if (game != null)
+                            game.removePlayer(player);
+                        announce("REMOVEPLAYER", player.ID);
+                    }
+                }
+            }
+        }
+
+        Player makePlayer() throws Exception
+        {
+            /* HELLO [name] */
+            Object[] decoded = (Object[]) in.readObject();
+            if (decoded.length != 2 || !decoded[0].equals("HELLO"))
+            {
+                return null;
+            }
+            else
+            {
+                return new Player(currentPlayerID++, (String) decoded[1]);
+            }
+        }
     }
 
     public void close()
@@ -171,21 +164,17 @@ public class Server
         view.closeRoom();
     }
 
-    protected synchronized void processMessage(Player player, String... data)
+    protected synchronized void processMessage(Player player, Object... data)
     {
-        String command = data[0];
-        List<String> params = Arrays.asList(data).subList(1, data.length);
-
-        System.out.println("Server received request: " + command + " - "
-                + params);
+        String command = (String) data[0];
 
         if (command.equals("STARTGAME"))
         {
             /* STARTGAME [properties] */
             if (drawingCardsTimer != null)
                 drawingCardsTimer.cancel();
-            game = new Game(GameProperties.decode(params), new NullView(
-                    view.name + " [Server]"));
+            game = new Game((GameProperties) data[1]);
+            game.setView(new NullView(view.name + " [Server]"));
             game.addPlayers(players);
             announce(data);
             // TODO ask other players to verify?
@@ -197,7 +186,7 @@ public class Server
             {
                 long randomSeed = System.currentTimeMillis();
                 game.startRound(randomSeed);
-                announce(command, Long.toString(randomSeed));
+                announce(command, randomSeed);
 
                 /* Start drawing */
                 drawingCardsTimer = new Timer();
@@ -212,7 +201,7 @@ public class Server
                                 && game.canDrawFromDeck(currentPlayerID))
                         {
                             game.drawFromDeck(currentPlayerID);
-                            announce("DRAW", Integer.toString(currentPlayerID));
+                            announce("DRAW", currentPlayerID);
                         }
                         else if (waitSteps++ > 30)
                         {
@@ -227,14 +216,14 @@ public class Server
         }
         else
         {
-            Play play = new Play(player.ID, Card.decodeCards(params));
+            Play play = (Play) data[1];
             if (command.equals("SHOW"))
             {
                 /* SHOW [cards] */
                 if (game.canShowCards(play))
                 {
                     game.showCards(play);
-                    announce(buildMessage(command, player, params));
+                    announce(data);
                 }
             }
             else if (command.equals("MAKEKITTY"))
@@ -243,7 +232,7 @@ public class Server
                 if (game.canMakeKitty(play))
                 {
                     game.makeKitty(play);
-                    announce(buildMessage(command, player, params));
+                    announce(data);
                 }
             }
             else if (command.equals("PLAY"))
@@ -256,43 +245,27 @@ public class Server
                     play = new Play(player.ID, Arrays.asList(minCard));
                 }
                 game.play(play);
-                announce(buildMessage(command, player,
-                        Card.encodeCards(play.getCards())));
+                announce(data);
             }
         }
     }
 
-    protected String[] buildMessage(String command, Player player,
-            List<String> data)
+    private void message(Player player, Object... args)
     {
-        List<String> args = new ArrayList<String>();
-        args.add(command);
-        args.add(Integer.toString(player.ID));
-        args.addAll(data);
-        return args.toArray(new String[0]);
+        try
+        {
+            outs.get(player.ID).writeObject(args);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
-    protected void message(Player player, String... args)
-    {
-        PrintWriter out = outs.get(player.ID);
-        for (String arg : args)
-            out.print(arg.replace(" ", "\1") + " ");
-        out.println();
-    }
-
-    protected void announce(String... args)
+    private void announce(Object... args)
     {
         System.out.println("Server announcing " + Arrays.toString(args));
         for (Player player : players)
             message(player, args);
-    }
-
-    protected String[] parse(String line)
-    {
-        String[] data = line.split(" ");
-        String[] decoded = new String[data.length];
-        for (int i = 0; i < data.length; i++)
-            decoded[i] = data[i].replace("\1", " ");
-        return decoded;
     }
 }

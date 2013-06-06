@@ -1,7 +1,11 @@
 package model;
 
-public final class Player implements Comparable<Player>
+import java.io.Serializable;
+
+public final class Player implements Serializable, Comparable<Player>
 {
+    private static final long serialVersionUID = 1L;
+
     public final int ID;
     public final String name;
 

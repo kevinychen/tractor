@@ -59,9 +59,9 @@ public class Game
     private Play lastWinningPlay;
 
     /* Reference to the view */
-    private View view;
+    private transient View view;
 
-    public Game(GameProperties properties, View view)
+    public Game(GameProperties properties)
     {
         this.players = new ArrayList<Player>();
         this.properties = properties;
@@ -72,8 +72,11 @@ public class Game
         this.teams = new HashMap<Integer, Integer>();
         this.currentScores = new HashMap<Integer, Integer>();
         this.tricks = new ArrayList<Trick>();
-        this.view = view;
+    }
 
+    public void setView(View view)
+    {
+        this.view = view;
         view.startGame(this);
     }
 

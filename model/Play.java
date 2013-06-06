@@ -1,10 +1,13 @@
 package model;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-public class Play
+public class Play implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private final int playerID;
     private final List<Card> cards;
 

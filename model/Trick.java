@@ -1,10 +1,13 @@
 package model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Trick
+public class Trick implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private final List<Play> plays;
 
     public Trick()
