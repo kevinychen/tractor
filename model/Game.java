@@ -1,5 +1,6 @@
 package model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,8 +13,10 @@ import model.Card.SUIT;
 import model.Card.VALUE;
 import view.View;
 
-public class Game
+public class Game implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private final List<Player> players;
 
     private GameProperties properties;

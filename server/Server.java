@@ -134,7 +134,7 @@ public class Server
                     message(this.player, "ADDPLAYER", player);
                 players.add(player);
                 if (game != null)
-                    game.addPlayer(player);
+                    message(player, "GAMESTATE", game);
                 announce("ADDPLAYER", player);
                 message(player, "YOU", player.ID);
             }

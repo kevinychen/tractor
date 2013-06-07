@@ -10,8 +10,8 @@ public class Main
         HumanView view = new HumanView("Kevin");
         view.start();
 
-        new DummyView("dummy 1").start();
-        new DummyView("dummy 2").start();
-        new DummyView("dummy 3").start();
+        new HumanView("dummy 1").start();
+        new HumanView("dummy 2").start();
+        new HumanView("dummy 3").start();
     }
 }

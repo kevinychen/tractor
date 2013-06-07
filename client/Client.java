@@ -150,8 +150,6 @@ public class Client
             /* ADDPLAYER [player] */
             Player player = (Player) data[1];
             players.add(player);
-            if (game != null)
-                game.addPlayer(player);
         }
         else if (command.equals("YOU"))
         {
@@ -175,6 +173,12 @@ public class Client
             game = new Game((GameProperties) data[1]);
             game.setView(view);
             game.addPlayers(players);
+        }
+        else if (command.equals("GAMESTATE"))
+        {
+            /* GAMESTATE [game] */
+            game = (Game) data[1];
+            game.setView(view);
         }
         else if (command.equals("STARTROUND"))
         {
