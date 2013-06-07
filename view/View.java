@@ -22,6 +22,11 @@ public abstract class View
         this.client = new Client(this);
     }
 
+    public boolean joinedGame()
+    {
+        return myPlayerID != 0;
+    }
+
     public int getPlayerID()
     {
         return myPlayerID;

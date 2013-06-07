@@ -414,7 +414,7 @@ public class Game implements Serializable
             lastWinningPlay = winningPlay(currentTrick);
             playerIndex = currentTrick.getPlays().indexOf(lastWinningPlay);
             update(currentScores, lastWinningPlay.getPlayerID(),
-                    lastWinningPlay.numPoints());
+                    currentTrick.numPoints());
             tricks.add(new Trick());
             view.finishTrick(currentTrick, lastWinningPlay.getPlayerID());
         }

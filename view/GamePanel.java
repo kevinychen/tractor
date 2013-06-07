@@ -100,8 +100,8 @@ public class GamePanel extends JPanel
 
     public void moveCardToHand(Card card, int playerID)
     {
-        moveCard(card, handLocation(playerID, card),
-                playerID == view.getPlayerID(), 0.5);
+        moveCard(card, handLocation(playerID, card), !view.joinedGame()
+                || playerID == view.getPlayerID(), 0.5);
     }
 
     public void moveCardToTable(Card card, int playerID)
@@ -228,14 +228,14 @@ public class GamePanel extends JPanel
 
     private Point handLocation(int playerID, Card card)
     {
-        List<Player> players = game.getPlayers();
-        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        double angle = getAngle(playerID);
         int startX = (int) (450 * (1 + 0.7 * Math.sin(angle)));
         int startY = (int) (350 * (1 + 0.7 * Math.cos(angle)));
 
         List<Card> cards = memoizeSortedHandCards(playerID);
         int cardIndex = cards.indexOf(card);
-        int cardDiff = playerID == view.getPlayerID() ? 14 : 9;
+        int cardDiff = (!view.joinedGame() || playerID == view.getPlayerID()) ? 14
+                : 9;
         return new Point((int) (startX + cardDiff * Math.cos(angle)
                 * (cardIndex - cards.size() / 2.0) - 35),
                 (int) (startY - cardDiff * Math.sin(angle)
@@ -244,8 +244,7 @@ public class GamePanel extends JPanel
 
     private Point tableLocation(int playerID, Card card)
     {
-        List<Player> players = game.getPlayers();
-        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        double angle = getAngle(playerID);
         int startX = (int) (450 * (1 + 0.4 * Math.sin(angle)));
         int startY = (int) (350 * (1 + 0.4 * Math.cos(angle)));
 
@@ -258,11 +257,19 @@ public class GamePanel extends JPanel
 
     private Point awayLocation(int playerID)
     {
-        List<Player> players = game.getPlayers();
-        double angle = 2 * Math.PI / players.size() * indexWithID(playerID);
+        double angle = getAngle(playerID);
         int startX = (int) (450 * (1 + 2 * Math.sin(angle)));
         int startY = (int) (350 * (1 + 2 * Math.cos(angle)));
         return new Point(startX, startY);
+    }
+
+    private double getAngle(int playerID)
+    {
+        List<Player> players = game.getPlayers();
+        int index = indexWithID(playerID);
+        if (view.joinedGame())
+            index -= indexWithID(view.getPlayerID());
+        return 2 * Math.PI / players.size() * index;
     }
 
     private int indexWithID(int playerID)
@@ -344,6 +351,9 @@ public class GamePanel extends JPanel
         @Override
         public void mouseClicked(MouseEvent e)
         {
+            if (!view.joinedGame())
+                return;
+
             List<Card> cards = new ArrayList<Card>(
                     memoizeSortedHandCards(view.getPlayerID()));
             Collections.reverse(cards);
