@@ -81,8 +81,9 @@ public class HumanView extends View
         {
             public void actionPerformed(ActionEvent e)
             {
-                String input = JOptionPane
-                        .showInputDialog("Enter IP: e.g. 192.168.0.1");
+//                String input = JOptionPane
+//                        .showInputDialog("Enter IP: e.g. 192.168.0.1");
+                String input = "127.0.0.1";
                 // TODO Set Cancel to go back to original state.
 
                 try

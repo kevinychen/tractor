@@ -4,6 +4,7 @@ import static model.Card.SUIT.*;
 import static model.Card.VALUE.*;
 
 import java.io.Serializable;
+import java.util.List;
 
 public final class Card implements Serializable
 {
@@ -60,6 +61,15 @@ public final class Card implements Serializable
     public boolean dataEquals(Card other)
     {
         return value == other.value && suit == other.suit;
+    }
+
+    public int frequencyIn(List<Card> cards)
+    {
+        int frequency = 0;
+        for (Card card : cards)
+            if (dataEquals(card))
+                frequency++;
+        return frequency;
     }
 
     @Override

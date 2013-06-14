@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -335,6 +336,25 @@ public class Game implements Serializable
                         .getCardsAfterPlay(cards))
                     if (suit(card) == startingSuit && !cards.contains(card))
                         return false;
+
+            /* If starting play has double/triple, must follow if possible */
+            int maxFrequency = maxFrequency(startingPlay.getCards());
+            if (numCardsNotInFrequency(play.getCards(), maxFrequency) >= maxFrequency)
+            {
+                /*
+                 * Room for more doubles/triples; check that none are in hand
+                 */
+                List<Card> handCards = hands.get(play.getPlayerID()).getCards();
+                for (Card card : handCards)
+                    if (suit(card) == startingSuit)
+                    {
+                        int frequency = card.frequencyIn(handCards);
+                        if (frequency > 1 && frequency <= maxFrequency
+                                && !play.getCards().contains(card))
+                            return false;
+                    }
+            }
+
             return true;
         }
     }
@@ -406,7 +426,6 @@ public class Game implements Serializable
         currentTrick.addPlay(play);
         hands.get(play.getPlayerID()).playCards(play.getCards());
         playerIndex = (playerIndex + 1) % players.size();
-        view.playCards(play);
 
         if (currentTrick.numPlays() == players.size())
         {
@@ -418,6 +437,8 @@ public class Game implements Serializable
             tricks.add(new Trick());
             view.finishTrick(currentTrick, lastWinningPlay.getPlayerID());
         }
+
+        view.playCards(play);
     }
 
     public boolean canStartNewRound()
@@ -622,6 +643,24 @@ public class Game implements Serializable
                 strictlyBeat = true;
         }
         return strictlyBeat;
+    }
+
+    private int maxFrequency(List<Card> cards)
+    {
+        int maxFrequency = 0;
+        for (Card card : cards)
+            maxFrequency = Math.max(maxFrequency, card.frequencyIn(cards));
+        return maxFrequency;
+    }
+
+    private int numCardsNotInFrequency(List<Card> cards, int frequency)
+    {
+        List<Card> badCards = new ArrayList<Card>(cards);
+        Iterator<Card> it = badCards.iterator();
+        while (it.hasNext())
+            if (it.next().frequencyIn(cards) >= frequency)
+                it.remove();
+        return badCards.size();
     }
 
     private int cardRank(Card card)

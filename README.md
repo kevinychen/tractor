@@ -14,3 +14,6 @@ Tasks:
 * allow cancelling of 'Create Room' / 'Join Room'.
 * allow confirmation of 'New Game'.
 * synchronization.
+* display names of players near hand.
+* add wait time after finish trick.
+* fix cannot trump cards bug.

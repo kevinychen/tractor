@@ -233,7 +233,8 @@ public class Server
                 /* PLAY [cards] */
                 if (game.canPlay(play))
                 {
-                    if (game.isSpecialPlay(play)
+                    if (game.getCurrentTrick().numPlays() == 0
+                            && game.isSpecialPlay(play)
                             && !game.allowedSpecialPlay(play))
                     {
                         message(player, "NOTIFICATION", "Invalid special play.");
