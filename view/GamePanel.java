@@ -41,7 +41,7 @@ public class GamePanel extends JPanel
     private Game game;
 
     private Map<Card, CardPosition> cardPositions;
-    private boolean previousTrick;
+    private boolean showPreviousTrick;
 
     public GamePanel(HumanView view)
     {
@@ -72,6 +72,7 @@ public class GamePanel extends JPanel
         for (MouseListener listener : getMouseListeners())
             removeMouseListener(listener);
         addMouseListener(new CardSelectListener());
+        addMouseListener(new ShowPreviousTrickListener());
         new Timer().schedule(new TimerTask()
         {
             public void run()
@@ -123,7 +124,7 @@ public class GamePanel extends JPanel
 
     public void showPreviousTrick(boolean flag)
     {
-        previousTrick = flag;
+        showPreviousTrick = flag;
     }
 
     public void paintComponent(Graphics g)
@@ -144,6 +145,8 @@ public class GamePanel extends JPanel
         /* Draw deck */
         if (game.deckHasCards())
             drawDeck(g);
+        else if (game.getState() == Game.State.AWAITING_PLAY)
+            drawShowPreviousTrickButton(g);
 
         drawCards(g);
     }
@@ -216,6 +219,15 @@ public class GamePanel extends JPanel
         g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
     }
 
+    private void drawShowPreviousTrickButton(Graphics g)
+    {
+        // TODO make fancier button.
+        g.setFont(new Font("Times New Roman", 0, 14));
+        FontMetrics fm = g.getFontMetrics();
+        String s = "Show prev";
+        g.drawString(s, 450 - fm.stringWidth(s) / 2, 350 - fm.getHeight());
+    }
+
     private void drawCards(Graphics g)
     {
         Set<Card> drawnCards = new HashSet<Card>();
@@ -239,7 +251,10 @@ public class GamePanel extends JPanel
         {
             for (Card card : cardPositions.keySet())
                 if (!drawnCards.contains(card))
+                {
+                    moveCardAway(card, 0);
                     drawCard(card, g);
+                }
         }
     }
 
@@ -348,7 +363,7 @@ public class GamePanel extends JPanel
         List<Card> cards = Collections.emptyList();
         if (game.getState() == Game.State.AWAITING_PLAY)
         {
-            Play play = (previousTrick ? game.getPreviousTrick() : game
+            Play play = (showPreviousTrick ? game.getPreviousTrick() : game
                     .getCurrentTrick()).getPlayByID(playerID);
             if (play != null)
                 cards = play.getCards();
@@ -390,6 +405,25 @@ public class GamePanel extends JPanel
                     break;
                 }
             }
+            repaint();
+        }
+    }
+
+    private class ShowPreviousTrickListener extends MouseAdapter
+    {
+        @Override
+        public void mousePressed(MouseEvent e)
+        {
+            if (Math.hypot(450 - e.getX(), 350 - e.getY()) < 50)
+                showPreviousTrick = true;
+            repaint();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e)
+        {
+            showPreviousTrick = false;
+            System.out.println("released");
             repaint();
         }
     }

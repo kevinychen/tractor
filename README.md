@@ -15,3 +15,4 @@ Tasks:
 * synchronization.
 * display names of players near hand.
 * fix cannot trump cards bug.
+* client should warn before special plays.
