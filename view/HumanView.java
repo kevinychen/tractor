@@ -342,6 +342,7 @@ public class HumanView extends View
 
     public void finishTrick(final Trick trick, final int winnerID)
     {
+        gamePanel.showPreviousTrick(true);
         /* Delay a while before drawing the trick finish. */
         new Timer().schedule(new TimerTask()
         {
@@ -350,8 +351,9 @@ public class HumanView extends View
                 for (Play play : trick.getPlays())
                     for (Card card : play.getCards())
                         gamePanel.moveCardAway(card, winnerID);
+                gamePanel.showPreviousTrick(false);
             }
-        }, 1000);
+        }, 2000);
     }
 
     public void notify(String notification)

@@ -41,6 +41,7 @@ public class GamePanel extends JPanel
     private Game game;
 
     private Map<Card, CardPosition> cardPositions;
+    private boolean previousTrick;
 
     public GamePanel(HumanView view)
     {
@@ -75,8 +76,11 @@ public class GamePanel extends JPanel
         {
             public void run()
             {
-                for (CardPosition position : cardPositions.values())
-                    position.snap();
+                synchronized (cardPositions)
+                {
+                    for (CardPosition position : cardPositions.values())
+                        position.snap();
+                }
                 repaint();
             }
         }, 50, 50);
@@ -85,13 +89,16 @@ public class GamePanel extends JPanel
     public List<Card> resetSelected()
     {
         List<Card> selectedCards = new ArrayList<Card>();
-        for (Card card : cardPositions.keySet())
+        synchronized (cardPositions)
         {
-            CardPosition position = cardPositions.get(card);
-            if (position.selected())
+            for (Card card : cardPositions.keySet())
             {
-                position.setSelected(false);
-                selectedCards.add(card);
+                CardPosition position = cardPositions.get(card);
+                if (position.selected())
+                {
+                    position.setSelected(false);
+                    selectedCards.add(card);
+                }
             }
         }
         repaint();
@@ -112,6 +119,11 @@ public class GamePanel extends JPanel
     public void moveCardAway(Card card, int playerID)
     {
         moveCard(card, awayLocation(playerID), true, 0.2);
+    }
+
+    public void showPreviousTrick(boolean flag)
+    {
+        previousTrick = flag;
     }
 
     public void paintComponent(Graphics g)
@@ -139,9 +151,13 @@ public class GamePanel extends JPanel
     private void moveCard(Card card, Point point, boolean faceUp,
             double snapRatio)
     {
-        if (!cardPositions.containsKey(card))
-            cardPositions.put(card, new CardPosition(deckLocation(), false));
-        cardPositions.get(card).setDest(point, faceUp, snapRatio);
+        synchronized (cardPositions)
+        {
+            if (!cardPositions.containsKey(card))
+                cardPositions
+                        .put(card, new CardPosition(deckLocation(), false));
+            cardPositions.get(card).setDest(point, faceUp, snapRatio);
+        }
     }
 
     private void drawGameInformation(Graphics g)
@@ -218,6 +234,12 @@ public class GamePanel extends JPanel
                 drawCard(card, g);
                 drawnCards.add(card);
             }
+        }
+        synchronized (cardPositions)
+        {
+            for (Card card : cardPositions.keySet())
+                if (!drawnCards.contains(card))
+                    drawCard(card, g);
         }
     }
 
@@ -303,45 +325,44 @@ public class GamePanel extends JPanel
     }
 
     private Map<Integer, List<Card>> sortedHandCards = new HashMap<Integer, List<Card>>();
-    private Map<Integer, Long> sortedHandCardTimes = new HashMap<Integer, Long>();
+    private Map<Integer, List<Card>> prevHandCards = new HashMap<Integer, List<Card>>();
 
     private List<Card> memoizeSortedHandCards(int playerID)
     {
-        long currentTime = System.currentTimeMillis();
-        if (!sortedHandCardTimes.containsKey(playerID)
-                || currentTime - sortedHandCardTimes.get(playerID) > 100)
+        List<Card> cards = game.getHand(playerID).getCards();
+        if (!cards.equals(prevHandCards.get(playerID)))
         {
-            List<Card> cards = game.getHand(playerID).getCards();
-            game.sortCards(cards);
-            sortedHandCards.put(playerID, cards);
-            sortedHandCardTimes.put(playerID, currentTime);
+            List<Card> sortedCards = new ArrayList<Card>(cards);
+            game.sortCards(sortedCards);
+            sortedHandCards.put(playerID, sortedCards);
+            prevHandCards.put(playerID, cards);
         }
         return sortedHandCards.get(playerID);
     }
 
     private Map<Integer, List<Card>> tableCards = new HashMap<Integer, List<Card>>();
-    private Map<Integer, Long> tableCardTimes = new HashMap<Integer, Long>();
+    private Map<Integer, List<Card>> prevTableCards = new HashMap<Integer, List<Card>>();
 
     private List<Card> memoizeTableCards(int playerID)
     {
-        long currentTime = System.currentTimeMillis();
-        if (!tableCardTimes.containsKey(playerID)
-                || currentTime - tableCardTimes.get(playerID) > 100)
+        List<Card> cards = Collections.emptyList();
+        if (game.getState() == Game.State.AWAITING_PLAY)
         {
-            List<Card> cards = Collections.emptyList();
-            if (game.getState() == Game.State.AWAITING_PLAY)
-            {
-                Play play = game.getCurrentTrick().getPlayByID(playerID);
-                if (play != null)
-                    cards = play.getCards();
-            }
-            else if (game.getShownCards() != null
-                    && game.getShownCards().getPlayerID() == playerID)
-                cards = game.getShownCards().getCards();
-            cards = new ArrayList<Card>(cards);
-            game.sortCards(cards);
-            tableCards.put(playerID, cards);
-            tableCardTimes.put(playerID, currentTime);
+            Play play = (previousTrick ? game.getPreviousTrick() : game
+                    .getCurrentTrick()).getPlayByID(playerID);
+            if (play != null)
+                cards = play.getCards();
+        }
+        else if (game.getShownCards() != null
+                && game.getShownCards().getPlayerID() == playerID)
+            cards = game.getShownCards().getCards();
+        if (!cards.equals(prevTableCards.get(playerID)))
+        {
+            List<Card> sortedCards = new ArrayList<Card>(cards);
+            game.sortCards(sortedCards);
+
+            tableCards.put(playerID, sortedCards);
+            prevTableCards.put(playerID, cards);
         }
         return tableCards.get(playerID);
     }

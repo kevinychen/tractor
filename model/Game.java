@@ -301,6 +301,11 @@ public class Game implements Serializable
         return tricks.get(tricks.size() - 1);
     }
 
+    public Trick getPreviousTrick()
+    {
+        return tricks.size() == 1 ? new Trick() : tricks.get(tricks.size() - 2);
+    }
+
     public boolean canPlay(Play play)
     {
         /* Must be current player */
