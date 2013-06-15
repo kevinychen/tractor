@@ -172,6 +172,15 @@ public class Game implements Serializable
         return players.get(playerIndex);
     }
 
+    public Player getPlayerWithID(int playerID)
+    {
+        for (Player player : players)
+            if (player.ID == playerID)
+                return player;
+
+        return null;
+    }
+
     public boolean started()
     {
         return deck != null;
@@ -420,6 +429,9 @@ public class Game implements Serializable
                         + cardRank(card1);
                 int score2 = (isTrump(card2) ? 100 : card2.suit.ordinal() * 20)
                         + cardRank(card2);
+                /* for big trumps, group by suit */
+                if (score1 == score2 && card1.value == getTrumpValue())
+                    return card1.suit.ordinal() - card2.suit.ordinal();
                 return score1 - score2;
             }
         });
@@ -436,7 +448,8 @@ public class Game implements Serializable
         {
             /* Finish trick */
             lastWinningPlay = winningPlay(currentTrick);
-            playerIndex = currentTrick.getPlays().indexOf(lastWinningPlay);
+            playerIndex = players.indexOf(getPlayerWithID(lastWinningPlay
+                    .getPlayerID()));
             update(currentScores, lastWinningPlay.getPlayerID(),
                     currentTrick.numPoints());
             tricks.add(new Trick());

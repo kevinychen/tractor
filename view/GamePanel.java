@@ -213,7 +213,7 @@ public class GamePanel extends JPanel
         Map<Integer, Integer> playerScores = game.getPlayerScores();
         for (int playerID : playerScores.keySet())
         {
-            s = findWithID(playerID).name + ": "
+            s = game.getPlayerWithID(playerID).name + ": "
                     + Card.VALUE.values()[playerScores.get(playerID)];
             g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
         }
@@ -230,7 +230,7 @@ public class GamePanel extends JPanel
         Map<Integer, Integer> currentScores = game.getCurrentScores();
         for (int playerID : currentScores.keySet())
         {
-            String s = findWithID(playerID).name + ": "
+            String s = game.getPlayerWithID(playerID).name + ": "
                     + currentScores.get(playerID);
             g.drawString(s, 10, y += lineDiff);
         }
@@ -325,24 +325,10 @@ public class GamePanel extends JPanel
     private double getAngle(int playerID)
     {
         List<Player> players = game.getPlayers();
-        int index = indexWithID(playerID);
+        int index = players.indexOf(game.getPlayerWithID(playerID));
         if (view.joinedGame())
-            index -= indexWithID(view.getPlayerID());
+            index -= players.indexOf(game.getPlayerWithID(view.getPlayerID()));
         return 2 * Math.PI / players.size() * index;
-    }
-
-    private int indexWithID(int playerID)
-    {
-        return game.getPlayers().indexOf(findWithID(playerID));
-    }
-
-    private Player findWithID(int playerID)
-    {
-        for (Player player : game.getPlayers())
-            if (player.ID == playerID)
-                return player;
-
-        return null;
     }
 
     private void drawCard(Card card, Graphics g)
