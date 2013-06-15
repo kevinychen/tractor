@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -165,7 +166,8 @@ public class GamePanel extends JPanel
 
     private void drawGameInformation(Graphics g)
     {
-        g.setFont(new Font("Times New Roman", 0, 14));
+        Font font = new Font("Times New Roman", 0, 14);
+        g.setFont(font);
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
@@ -177,6 +179,26 @@ public class GamePanel extends JPanel
                         : (char) (game.getTrumpSuit().ordinal() + '\u2660')),
                 10, y += lineDiff);
         g.drawString("Starter: " + game.getMaster().name, 10, y += lineDiff);
+
+        /* Draw player names */
+        List<Player> players = game.getPlayers();
+        for (Player player : players)
+            if (player.ID != view.getPlayerID())
+            {
+                double angle = getAngle(player.ID);
+                int startX = (int) (450 * (1 + 0.9 * Math.sin(angle)));
+                int startY = (int) (350 * (1 + 0.9 * Math.cos(angle)));
+                String s = player.name;
+                AffineTransform at = new AffineTransform();
+                double transformAngle = (Math.cos(angle) < 1e-10 ? Math.PI
+                        - angle : -angle);
+                at.rotate(transformAngle);
+                g.setFont(font.deriveFont(at));
+                int width = fm.stringWidth(s);
+                g.drawString(s, (int) (startX - Math.cos(transformAngle)
+                        * width / 2), (int) (startY - Math.sin(transformAngle)
+                        * width / 2));
+            }
     }
 
     private void drawGameScores(Graphics g)
@@ -423,7 +445,6 @@ public class GamePanel extends JPanel
         public void mouseReleased(MouseEvent e)
         {
             showPreviousTrick = false;
-            System.out.println("released");
             repaint();
         }
     }

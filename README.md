@@ -13,6 +13,8 @@ Tasks:
 * allow cancelling of 'Create Room' / 'Join Room'.
 * allow confirmation of 'New Game'.
 * synchronization.
-* display names of players near hand.
 * fix cannot trump cards bug.
 * client should warn before special plays.
+* rotate cards in other players' hands.
+* previous trick should slide in from winning player.
+* fix exceptions with joining room and leaving room.
