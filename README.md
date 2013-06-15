@@ -16,3 +16,4 @@ Tasks:
 * client should warn before special plays.
 * rotate cards in other players' hands.
 * fix exceptions with joining room and leaving room.
+* kitty comes from wrong place.

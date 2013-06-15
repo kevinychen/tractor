@@ -108,6 +108,11 @@ public class GamePanel extends JPanel
         return selectedCards;
     }
 
+    public void moveCardsToDeck()
+    {
+        cardPositions.clear();
+    }
+
     public void moveCardToHand(Card card, int playerID)
     {
         moveCard(card, handLocation(playerID, card), !view.joinedGame()
@@ -380,6 +385,8 @@ public class GamePanel extends JPanel
             if (play != null)
                 cards = play.getCards();
         }
+        else if (game.getState() == Game.State.AWAITING_RESTART)
+            cards = game.getKitty().getCards();
         else if (game.getShownCards() != null
                 && game.getShownCards().getPlayerID() == playerID)
             cards = game.getShownCards().getCards();

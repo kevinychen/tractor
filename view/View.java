@@ -67,6 +67,8 @@ public abstract class View
 
     public abstract void finishTrick(Trick trick, int winnerID);
 
+    public abstract void endRound();
+
     public abstract void notify(String notification);
 
     public abstract void repaint();

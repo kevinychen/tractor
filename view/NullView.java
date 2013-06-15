@@ -118,6 +118,13 @@ public class NullView extends View
     }
 
     @Override
+    public void endRound()
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
     public void notify(String notification)
     {
         // TODO Auto-generated method stub

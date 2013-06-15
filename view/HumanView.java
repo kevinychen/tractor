@@ -171,6 +171,8 @@ public class HumanView extends View
                                 client.requestPlayCards(cards);
                                 break;
                             }
+                        case AWAITING_RESTART:
+                            break;
                     }
                 }
             }
@@ -354,6 +356,14 @@ public class HumanView extends View
                 gamePanel.showPreviousTrick(false);
             }
         }, 2000);
+    }
+
+    public void endRound()
+    {
+        actionButton.setVisible(false);
+        Play kitty = game.getKitty();
+        for (Card card : kitty.getCards())
+            gamePanel.moveCardToTable(card, kitty.getPlayerID());
     }
 
     public void notify(String notification)

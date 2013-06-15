@@ -31,7 +31,7 @@ public class Game implements Serializable
     /* state of the game */
     public enum State
     {
-        AWAITING_SHOW, AWAITING_KITTY, AWAITING_PLAY
+        AWAITING_SHOW, AWAITING_KITTY, AWAITING_PLAY, AWAITING_RESTART
     }
 
     private State state;
@@ -108,6 +108,7 @@ public class Game implements Serializable
     {
         players.remove(player);
         playerScores.remove(player.ID);
+        currentScores.remove(player.ID);
         if (masterIndex > 0 && masterIndex == players.size())
             masterIndex--;
     }
@@ -451,6 +452,8 @@ public class Game implements Serializable
             currentTrick.setWinningPlay(winningPlay);
             tricks.add(new Trick());
             view.finishTrick(currentTrick, winningPlay.getPlayerID());
+            if (canStartNewRound())
+                endRound();
         }
 
         view.playCards(play);
@@ -467,11 +470,12 @@ public class Game implements Serializable
 
     public void endRound()
     {
+        state = State.AWAITING_RESTART;
+
         /* Add points from kitty, doubled */
-        if (teams.get(getPreviousTrick().getWinningPlay().getPlayerID()) != teams
-                .get(kitty.getPlayerID()))
-            update(currentScores, getPreviousTrick().getWinningPlay()
-                    .getPlayerID(), 2 * kitty.numPoints());
+        update(currentScores,
+                getPreviousTrick().getWinningPlay().getPlayerID(),
+                2 * kitty.numPoints());
 
         /* Increment scores of players on winning team */
         int totalScore = 0;
@@ -482,6 +486,8 @@ public class Game implements Serializable
             incrementPlayerScores(1, 1);
         else
             incrementPlayerScores(0, 1);
+
+        view.endRound();
     }
 
     public List<Player> getWinners()
@@ -513,7 +519,7 @@ public class Game implements Serializable
 
         /* Increment scores */
         for (Player player : players)
-            if (teams.get(player) == winningTeam)
+            if (teams.get(player.ID) == winningTeam)
                 update(playerScores, player.ID, 1);
     }
 
