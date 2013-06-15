@@ -59,9 +59,6 @@ public class Game implements Serializable
     /* A list of tricks, up to the current (possibly unfinished) */
     private final List<Trick> tricks;
 
-    /* Last winning play */
-    private Play lastWinningPlay;
-
     /* Reference to the view */
     private transient View view;
 
@@ -155,7 +152,6 @@ public class Game implements Serializable
         currentScores.clear();
         tricks.clear();
         tricks.add(new Trick());
-        lastWinningPlay = null;
 
         for (Player player : players)
         {
@@ -447,13 +443,14 @@ public class Game implements Serializable
         if (currentTrick.numPlays() == players.size())
         {
             /* Finish trick */
-            lastWinningPlay = winningPlay(currentTrick);
-            playerIndex = players.indexOf(getPlayerWithID(lastWinningPlay
+            Play winningPlay = winningPlay(currentTrick);
+            playerIndex = players.indexOf(getPlayerWithID(winningPlay
                     .getPlayerID()));
-            update(currentScores, lastWinningPlay.getPlayerID(),
+            update(currentScores, winningPlay.getPlayerID(),
                     currentTrick.numPoints());
+            currentTrick.setWinningPlay(winningPlay);
             tricks.add(new Trick());
-            view.finishTrick(currentTrick, lastWinningPlay.getPlayerID());
+            view.finishTrick(currentTrick, winningPlay.getPlayerID());
         }
 
         view.playCards(play);
@@ -471,10 +468,10 @@ public class Game implements Serializable
     public void endRound()
     {
         /* Add points from kitty, doubled */
-        if (teams.get(lastWinningPlay.getPlayerID()) != teams.get(kitty
-                .getPlayerID()))
-            update(currentScores, lastWinningPlay.getPlayerID(),
-                    2 * kitty.numPoints());
+        if (teams.get(getPreviousTrick().getWinningPlay().getPlayerID()) != teams
+                .get(kitty.getPlayerID()))
+            update(currentScores, getPreviousTrick().getWinningPlay()
+                    .getPlayerID(), 2 * kitty.numPoints());
 
         /* Increment scores of players on winning team */
         int totalScore = 0;

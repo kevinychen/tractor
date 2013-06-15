@@ -9,6 +9,7 @@ public class Trick implements Serializable
     private static final long serialVersionUID = 1L;
 
     private final List<Play> plays;
+    private Play winningPlay;
 
     public Trick()
     {
@@ -18,6 +19,11 @@ public class Trick implements Serializable
     public void addPlay(Play play)
     {
         plays.add(play);
+    }
+
+    public void setWinningPlay(Play play)
+    {
+        winningPlay = play;
     }
 
     public List<Play> getPlays()
@@ -50,5 +56,10 @@ public class Trick implements Serializable
     public Play getInitialPlay()
     {
         return plays.get(0);
+    }
+
+    public Play getWinningPlay()
+    {
+        return winningPlay;
     }
 }

@@ -15,5 +15,4 @@ Tasks:
 * synchronization.
 * client should warn before special plays.
 * rotate cards in other players' hands.
-* previous trick should slide in from winning player.
 * fix exceptions with joining room and leaving room.

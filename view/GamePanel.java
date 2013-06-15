@@ -29,6 +29,7 @@ import model.Card;
 import model.Game;
 import model.Play;
 import model.Player;
+import model.Trick;
 
 public class GamePanel extends JPanel
 {
@@ -269,15 +270,18 @@ public class GamePanel extends JPanel
                 drawnCards.add(card);
             }
         }
-        synchronized (cardPositions)
-        {
-            for (Card card : cardPositions.keySet())
-                if (!drawnCards.contains(card))
-                {
-                    moveCardAway(card, 0);
-                    drawCard(card, g);
-                }
-        }
+        Trick[] tricks =
+        { game.getCurrentTrick(), game.getPreviousTrick() };
+        for (Trick trick : tricks)
+            if (trick.getWinningPlay() != null)
+                for (Play play : trick.getPlays())
+                    for (Card card : play.getCards())
+                        if (!drawnCards.contains(card))
+                        {
+                            moveCardAway(card, trick.getWinningPlay()
+                                    .getPlayerID());
+                            drawCard(card, g);
+                        }
     }
 
     private Point deckLocation()
