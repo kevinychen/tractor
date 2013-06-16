@@ -43,14 +43,23 @@ public class FriendCards implements Serializable
         return friendCards.size();
     }
 
-    public void update(Card playedCard)
+    /*
+     * Updates the friend cards information with this newly played card. Returns
+     * true if this played card causes the player to become a friend.
+     */
+    public boolean update(Card playedCard)
     {
+        boolean updated = false;
         for (Card card : friendCards.keySet())
             if (card.dataEquals(playedCard))
             {
                 friendCards.put(card, friendCards.get(card) - 1);
                 if (friendCards.get(card) == 0)
+                {
                     friendCards.remove(card);
+                    updated = true;
+                }
             }
+        return updated;
     }
 }

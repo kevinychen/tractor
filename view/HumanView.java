@@ -155,6 +155,7 @@ public class HumanView extends View
                             client.requestShowCards(cards);
                             break;
                         case AWAITING_FRIEND_CARDS:
+                            client.requestShowCards(cards);
                             break;
                         case AWAITING_KITTY:
                             if (getPlayerID() == game.getMaster().ID)

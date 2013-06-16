@@ -148,6 +148,7 @@ public class GamePanel extends JPanel
             return;
 
         drawRoundScores(g);
+        drawSpecialInformation(g);
 
         /* Draw deck */
         if (game.deckHasCards())
@@ -231,7 +232,6 @@ public class GamePanel extends JPanel
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
-        // TODO change to team scores
         Map<String, Integer> teamScores = game.getTeamScores();
         int y = 640 - lineDiff * teamScores.size();
         for (String teamName : teamScores.keySet())
@@ -239,6 +239,17 @@ public class GamePanel extends JPanel
             String s = teamName + ": " + teamScores.get(teamName);
             g.drawString(s, 10, y += lineDiff);
         }
+    }
+
+    private void drawSpecialInformation(Graphics g)
+    {
+        g.setFont(new Font("Times New Roman", 0, 14));
+        FontMetrics fm = g.getFontMetrics();
+        int lineDiff = fm.getHeight() + 4;
+
+        int y = 640 - lineDiff;
+        String s = "Special";
+        g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
     }
 
     private void drawDeck(Graphics g)

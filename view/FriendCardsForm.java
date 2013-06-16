@@ -76,6 +76,7 @@ public class FriendCardsForm extends JFrame
             suitMenus.add(new JComboBox<String>(suitOptions));
 
             final int iCopy = i;
+            valueMenus.get(i).setSelectedItem("ace");
             valueMenus.get(i).addActionListener(new ActionListener()
             {
                 public void actionPerformed(ActionEvent e)
@@ -106,7 +107,7 @@ public class FriendCardsForm extends JFrame
                             || value == Card.VALUE.SMALL_JOKER ? Card.SUIT.TRUMP
                             : Card.SUIT.values()[suitMenus.get(i)
                                     .getSelectedIndex()]);
-                    int index = indexMenus.get(i).getSelectedIndex();
+                    int index = indexMenus.get(i).getSelectedIndex() + 1;
                     friendCards.addFriendCard(new Card(value, suit, ID++),
                             index);
                 }
@@ -114,7 +115,7 @@ public class FriendCardsForm extends JFrame
                 dispose();
             }
         });
-        
+
         /* Disallow closing */
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 

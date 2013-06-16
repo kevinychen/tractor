@@ -318,6 +318,7 @@ public class Game implements Serializable
         state = State.AWAITING_KITTY;
         this.friendCards = friendCards;
         view.selectFriendCards(friendCards);
+        view.notifyCanMakeKitty(kittySize());
     }
 
     public Play getKitty()
@@ -508,7 +509,9 @@ public class Game implements Serializable
 
         if (properties.find_a_friend)
             for (Card card : play.getCards())
-                friendCards.update(card);
+                if (friendCards.update(card))
+                    teams.put(play.getPlayerID(),
+                            teams.get(players.get(masterIndex).ID));
 
         if (currentTrick.numPlays() == players.size())
         {
@@ -571,7 +574,7 @@ public class Game implements Serializable
     private int numFriends()
     {
         if (properties.find_a_friend)
-            return (players.size() - 1) / 2;
+            return players.size() / 2 - 1;
         else
             return 0;
     }

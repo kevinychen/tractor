@@ -17,3 +17,4 @@ Tasks:
 * kitty comes from wrong place.
 * set validity for game properties.
 * show game properties and friend cards information.
+* color player names next to hands.
