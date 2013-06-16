@@ -21,7 +21,6 @@ import javax.swing.JTextField;
 
 import model.Card;
 import model.Game;
-import model.GameProperties;
 import model.Play;
 import model.Trick;
 
@@ -120,11 +119,7 @@ public class HumanView extends View
         {
             public void actionPerformed(ActionEvent e)
             {
-                // TODO Set Cancel to go back to original state.
-                GameProperties properties = new GameProperties();
-                properties.numDecks = 2;
-                properties.find_a_friend = false;
-                client.requestStartGame(properties);
+                new GamePropertiesForm(frame, client).setVisible(true);
             }
         });
         newRoundButton = new JButton("New Round");
