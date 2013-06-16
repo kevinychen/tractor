@@ -283,6 +283,7 @@ public class HumanView extends View
     {
         notificationField
                 .setText("New game started. Click 'New Round' to begin.");
+        actionButton.setVisible(false);
         this.game = game;
         gamePanel.setGame(game);
         frame.repaint();

@@ -26,7 +26,9 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
+import model.GameProperties;
 import model.Play;
 import model.Player;
 import model.Trick;
@@ -143,12 +145,12 @@ public class GamePanel extends JPanel
 
         drawGameInformation(g);
         drawGameScores(g);
+        drawSpecialInformation(g);
 
         if (!game.started())
             return;
 
         drawRoundScores(g);
-        drawSpecialInformation(g);
 
         /* Draw deck */
         if (game.deckHasCards())
@@ -253,9 +255,40 @@ public class GamePanel extends JPanel
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
-        int y = 640 - lineDiff;
-        String s = "Special";
+        GameProperties properties = game.getProperties();
+        FriendCards friendCards = game.getFriendCards();
+        int y = 640 - lineDiff
+                * (1 + (properties.find_a_friend ? 1 : 0) + friendCards.size());
+        String s = properties.numDecks + " decks";
         g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
+        if (properties.find_a_friend)
+        {
+            s = "Find a friend!"
+                    + (friendCards.isEmpty() ? "" : " Looking for:");
+            g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
+        }
+        Map<Card, Integer> friendCardsMap = friendCards.getFriendCards();
+        for (Card card : friendCardsMap.keySet())
+        {
+            int index = friendCardsMap.get(card);
+            String indexStr;
+            if (index == 1)
+                indexStr = "next";
+            else if (index == 2)
+                indexStr = "second";
+            else if (index == 3)
+                indexStr = "third";
+            else
+                indexStr = index + "th";
+            s = "the "
+                    + indexStr
+                    + " "
+                    + card.value.toString().toLowerCase().replace("_", " ")
+                    + (card.value == Card.VALUE.SMALL_JOKER
+                            || card.value == Card.VALUE.BIG_JOKER ? "" : " of "
+                            + card.suit.toString().toLowerCase() + "s");
+            g.drawString(s, 890 - fm.stringWidth(s), y += lineDiff);
+        }
     }
 
     private void drawDeck(Graphics g)
