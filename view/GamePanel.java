@@ -175,6 +175,7 @@ public class GamePanel extends JPanel
     {
         Font font = new Font("Times New Roman", 0, 14);
         g.setFont(font);
+        g.setColor(Color.BLACK);
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
@@ -190,27 +191,30 @@ public class GamePanel extends JPanel
         /* Draw player names */
         List<Player> players = game.getPlayers();
         for (Player player : players)
-            if (player.ID != view.getPlayerID())
-            {
-                double angle = getAngle(player.ID);
-                int startX = (int) (450 * (1 + 0.9 * Math.sin(angle)));
-                int startY = (int) (350 * (1 + 0.9 * Math.cos(angle)));
-                String s = player.name;
-                AffineTransform at = new AffineTransform();
-                double transformAngle = (Math.cos(angle) < 1e-10 ? Math.PI
-                        - angle : -angle);
-                at.rotate(transformAngle);
-                g.setFont(font.deriveFont(at));
-                int width = fm.stringWidth(s);
-                g.drawString(s, (int) (startX - Math.cos(transformAngle)
-                        * width / 2), (int) (startY - Math.sin(transformAngle)
-                        * width / 2));
-            }
+        {
+            double angle = getAngle(player.ID);
+            int startX = (int) (450 * (1 + 0.9 * Math.sin(angle)));
+            int startY = (int) (350 * (1 + 0.9 * Math.cos(angle)));
+            String s = player.name;
+            AffineTransform at = new AffineTransform();
+            double transformAngle = (Math.cos(angle) < 1e-10 ? Math.PI - angle
+                    : -angle);
+            at.rotate(transformAngle);
+            g.setFont(font.deriveFont(at));
+            int width = fm.stringWidth(s);
+            if (game.getTeam(player.ID) == game.getTeam(game.getMaster().ID))
+                g.setColor(Color.BLACK);
+            else
+                g.setColor(Color.BLUE);
+            g.drawString(s, (int) (startX - Math.cos(transformAngle) * width
+                    / 2), (int) (startY - Math.sin(transformAngle) * width / 2));
+        }
     }
 
     private void drawGameScores(Graphics g)
     {
         g.setFont(new Font("Times New Roman", 0, 14));
+        g.setColor(Color.BLACK);
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
@@ -229,6 +233,7 @@ public class GamePanel extends JPanel
     private void drawRoundScores(Graphics g)
     {
         g.setFont(new Font("Times New Roman", 0, 14));
+        g.setColor(Color.BLUE);
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
@@ -244,6 +249,7 @@ public class GamePanel extends JPanel
     private void drawSpecialInformation(Graphics g)
     {
         g.setFont(new Font("Times New Roman", 0, 14));
+        g.setColor(Color.BLACK);
         FontMetrics fm = g.getFontMetrics();
         int lineDiff = fm.getHeight() + 4;
 
@@ -261,6 +267,7 @@ public class GamePanel extends JPanel
     {
         // TODO make fancier button.
         g.setFont(new Font("Times New Roman", 0, 14));
+        g.setColor(Color.BLACK);
         FontMetrics fm = g.getFontMetrics();
         String s = "Show prev";
         g.drawString(s, 450 - fm.stringWidth(s) / 2, 350 - fm.getHeight());

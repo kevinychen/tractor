@@ -180,7 +180,7 @@ public class HumanView extends View
 
         gamePanel = new GamePanel(this);
 
-        frame.setSize(900, 700);
+        frame.setSize(900, 720);
         frame.setResizable(false);
 
         arrange();

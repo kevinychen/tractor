@@ -301,6 +301,11 @@ public class Game implements Serializable
         return shownCards.getPrimarySuit();
     }
 
+    public int getTeam(int playerID)
+    {
+        return teams.containsKey(playerID) ? teams.get(playerID) : -1;
+    }
+
     public FriendCards getFriendCards()
     {
         return friendCards;
