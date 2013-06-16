@@ -1,6 +1,7 @@
 package view;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
 import model.Play;
 import model.Trick;
@@ -55,11 +56,15 @@ public abstract class View
 
     public abstract void startRound();
 
+    public abstract void requestFriendCards(int numFriends);
+
     public abstract void notifyCanMakeKitty(int kittySize);
 
     public abstract void drawCard(Card card, int playerID);
 
     public abstract void showCards(Play play);
+
+    public abstract void selectFriendCards(FriendCards friendCards);
 
     public abstract void makeKitty(Play play);
 

@@ -232,12 +232,11 @@ public class GamePanel extends JPanel
         int lineDiff = fm.getHeight() + 4;
 
         // TODO change to team scores
-        int y = 640 - lineDiff * game.numPlayers();
-        Map<Integer, Integer> currentScores = game.getCurrentScores();
-        for (int playerID : currentScores.keySet())
+        Map<String, Integer> teamScores = game.getTeamScores();
+        int y = 640 - lineDiff * teamScores.size();
+        for (String teamName : teamScores.keySet())
         {
-            String s = game.getPlayerWithID(playerID).name + ": "
-                    + currentScores.get(playerID);
+            String s = teamName + ": " + teamScores.get(teamName);
             g.drawString(s, 10, y += lineDiff);
         }
     }

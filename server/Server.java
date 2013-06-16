@@ -14,6 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
 import model.GameProperties;
 import model.Play;
@@ -206,6 +207,16 @@ public class Server
                 }, 1000, 100);
             }
             // TODO ask other players to verify?
+        }
+        else if (command.equals("SELECTFRIEND"))
+        {
+            /* SELECTFRIEND [player ID] [friend cards] */
+            if (game.canSelectFriendCards((Integer) data[1],
+                    (FriendCards) data[2]))
+            {
+                game.selectFriendCards((Integer) data[1], (FriendCards) data[2]);
+                announce(data);
+            }
         }
         else
         {

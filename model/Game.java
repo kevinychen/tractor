@@ -31,7 +31,7 @@ public class Game implements Serializable
     /* state of the game */
     public enum State
     {
-        AWAITING_SHOW, AWAITING_KITTY, AWAITING_PLAY, AWAITING_RESTART
+        AWAITING_SHOW, AWAITING_FRIEND_CARDS, AWAITING_KITTY, AWAITING_PLAY, AWAITING_RESTART
     }
 
     private State state;
@@ -53,6 +53,9 @@ public class Game implements Serializable
     /* A map from playerID to team */
     private final Map<Integer, Integer> teams;
 
+    /* Selected friend cards with index; used in 'find a friend' version */
+    private FriendCards friendCards;
+
     /* A map from playerID to current round score */
     private final Map<Integer, Integer> currentScores;
 
@@ -71,6 +74,7 @@ public class Game implements Serializable
         this.masterIndex = 0;
         this.hands = new HashMap<Integer, Hand>();
         this.teams = new HashMap<Integer, Integer>();
+        this.friendCards = new FriendCards();
         this.currentScores = new HashMap<Integer, Integer>();
         this.tricks = new ArrayList<Trick>();
     }
@@ -113,6 +117,11 @@ public class Game implements Serializable
             masterIndex--;
     }
 
+    public GameProperties getProperties()
+    {
+        return properties;
+    }
+
     public Map<Integer, Integer> getPlayerScores()
     {
         return new HashMap<Integer, Integer>(playerScores);
@@ -150,6 +159,7 @@ public class Game implements Serializable
         kitty = null;
         hands.clear();
         teams.clear();
+        friendCards.clear();
         currentScores.clear();
         tricks.clear();
         tricks.add(new Trick());
@@ -157,8 +167,20 @@ public class Game implements Serializable
         for (Player player : players)
         {
             hands.put(player.ID, new Hand());
-            teams.put(player.ID, 0); // TODO
             currentScores.put(player.ID, 0);
+
+            if (properties.find_a_friend)
+            {
+                /* everyone is initially on his/her own team */
+                for (int i = 0; i < players.size(); i++)
+                    teams.put(players.get(i).ID, i);
+            }
+            else
+            {
+                /* every other player is on one team */
+                for (int i = 0; i < players.size(); i++)
+                    teams.put(players.get(i).ID, i % 2);
+            }
         }
 
         view.startRound();
@@ -212,8 +234,17 @@ public class Game implements Serializable
         while (!deck.isEmpty())
             hands.get(players.get(masterIndex).ID).addCard(
                     deck.remove(deck.size() - 1));
-        state = State.AWAITING_KITTY;
-        view.notifyCanMakeKitty(kittySize());
+
+        if (properties.find_a_friend)
+        {
+            state = State.AWAITING_FRIEND_CARDS;
+            view.requestFriendCards(numFriends());
+        }
+        else
+        {
+            state = State.AWAITING_KITTY;
+            view.notifyCanMakeKitty(kittySize());
+        }
     }
 
     public Play getShownCards()
@@ -270,6 +301,25 @@ public class Game implements Serializable
         return shownCards.getPrimarySuit();
     }
 
+    public FriendCards getFriendCards()
+    {
+        return friendCards;
+    }
+
+    public boolean canSelectFriendCards(int playerID, FriendCards friendCards)
+    {
+        return properties.find_a_friend
+                && playerID == players.get(masterIndex).ID
+                && friendCards.size() == numFriends();
+    }
+
+    public void selectFriendCards(int playerID, FriendCards friendCards)
+    {
+        state = State.AWAITING_KITTY;
+        this.friendCards = friendCards;
+        view.selectFriendCards(friendCards);
+    }
+
     public Play getKitty()
     {
         return kitty;
@@ -297,9 +347,24 @@ public class Game implements Serializable
         return hands.get(playerID);
     }
 
-    public Map<Integer, Integer> getCurrentScores()
+    public Map<String, Integer> getTeamScores()
     {
-        return new HashMap<Integer, Integer>(currentScores);
+        int masterTeam = teams.get(players.get(masterIndex).ID);
+
+        Map<String, Integer> teamScores = new HashMap<String, Integer>();
+        for (Player player : players)
+            if (teams.get(player.ID) != masterTeam)
+            {
+                String team = (friendCards.isEmpty() ? "defenders"
+                        : player.name);
+                if (!teamScores.containsKey(team))
+                    teamScores.put(team, 0);
+                teamScores.put(team,
+                        teamScores.get(team) + currentScores.get(player.ID));
+            }
+
+        return teamScores;
+
     }
 
     public Trick getCurrentTrick()
@@ -441,6 +506,10 @@ public class Game implements Serializable
         hands.get(play.getPlayerID()).playCards(play.getCards());
         playerIndex = (playerIndex + 1) % players.size();
 
+        if (properties.find_a_friend)
+            for (Card card : play.getCards())
+                friendCards.update(card);
+
         if (currentTrick.numPlays() == players.size())
         {
             /* Finish trick */
@@ -451,9 +520,9 @@ public class Game implements Serializable
                     currentTrick.numPoints());
             currentTrick.setWinningPlay(winningPlay);
             tricks.add(new Trick());
-            view.finishTrick(currentTrick, winningPlay.getPlayerID());
             if (canStartNewRound())
                 endRound();
+            view.finishTrick(currentTrick, winningPlay.getPlayerID());
         }
 
         view.playCards(play);
@@ -497,6 +566,14 @@ public class Game implements Serializable
             if (playerScores.get(player.ID) > Card.VALUE.ACE.ordinal())
                 winners.add(player);
         return winners;
+    }
+
+    private int numFriends()
+    {
+        if (properties.find_a_friend)
+            return (players.size() - 1) / 2;
+        else
+            return 0;
     }
 
     private int kittySize()

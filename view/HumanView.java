@@ -20,6 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
 import model.Play;
 import model.Trick;
@@ -152,6 +153,8 @@ public class HumanView extends View
                     {
                         case AWAITING_SHOW:
                             client.requestShowCards(cards);
+                            break;
+                        case AWAITING_FRIEND_CARDS:
                             break;
                         case AWAITING_KITTY:
                             if (getPlayerID() == game.getMaster().ID)
@@ -298,6 +301,16 @@ public class HumanView extends View
         frame.repaint();
     }
 
+    public void requestFriendCards(int numFriends)
+    {
+        if (getPlayerID() == game.getMaster().ID)
+            new FriendCardsForm(frame, client, game.getProperties().numDecks,
+                    numFriends).setVisible(true);
+        else
+            notificationField
+                    .setText("Waiting for friend cards to be selected.");
+    }
+
     public void notifyCanMakeKitty(int kittySize)
     {
         if (getPlayerID() == game.getMaster().ID)
@@ -321,6 +334,11 @@ public class HumanView extends View
         for (Card card : play.getCards())
             gamePanel.moveCardToTable(card, play.getPlayerID());
         frame.repaint();
+    }
+
+    public void selectFriendCards(FriendCards friendCards)
+    {
+        // TODO
     }
 
     public void makeKitty(Play play)

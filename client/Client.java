@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
 import model.GameProperties;
 import model.Play;
@@ -109,6 +110,12 @@ public class Client
             view.notify("Invalid show.");
     }
 
+    public synchronized void requestFriendCards(FriendCards friendCards)
+    {
+        if (game.canSelectFriendCards(view.getPlayerID(), friendCards))
+            request("SELECTFRIEND", view.getPlayerID(), friendCards);
+    }
+
     public synchronized void requestMakeKitty(List<Card> cards)
     {
         Play play = new Play(view.getPlayerID(), cards);
@@ -194,6 +201,7 @@ public class Client
             /* DRAW [player ID] */
             game.drawFromDeck((Integer) data[1]);
         }
+
         else if (command.equals("TAKEKITTY"))
         {
             /* TAKEKITTY */
@@ -203,6 +211,11 @@ public class Client
         {
             /* SHOW [cards] */
             game.showCards((Play) data[1]);
+        }
+        else if (command.equals("SELECTFRIEND"))
+        {
+            /* SELECTFRIEND [player ID] [friend cards] */
+            game.selectFriendCards((Integer) data[1], (FriendCards) data[2]);
         }
         else if (command.equals("MAKEKITTY"))
         {

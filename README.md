@@ -15,3 +15,5 @@ Tasks:
 * rotate cards in other players' hands.
 * fix exceptions with joining room and leaving room.
 * kitty comes from wrong place.
+* set validity for game properties.
+* show game properties and friend cards information.

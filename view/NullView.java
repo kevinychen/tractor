@@ -1,6 +1,7 @@
 package view;
 
 import model.Card;
+import model.FriendCards;
 import model.Game;
 import model.Play;
 import model.Trick;
@@ -76,6 +77,13 @@ public class NullView extends View
     }
 
     @Override
+    public void requestFriendCards(int numFriends)
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
     public void notifyCanMakeKitty(int kittySize)
     {
         // TODO Auto-generated method stub
@@ -91,6 +99,13 @@ public class NullView extends View
 
     @Override
     public void showCards(Play play)
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void selectFriendCards(FriendCards friendCards)
     {
         // TODO Auto-generated method stub
 
