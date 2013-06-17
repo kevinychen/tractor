@@ -88,6 +88,11 @@ public class Client
         view.leaveRoom();
     }
 
+    public int numPlayers()
+    {
+        return players.size();
+    }
+
     /* Methods called by controller */
 
     public synchronized void requestStartGame(GameProperties properties)

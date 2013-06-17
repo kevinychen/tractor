@@ -13,6 +13,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -52,8 +53,17 @@ public class GamePropertiesForm extends JFrame
                 GameProperties properties = new GameProperties();
                 properties.numDecks = (Integer) numDecksMenu.getSelectedItem();
                 properties.find_a_friend = find_a_friendSelect.isSelected();
-                client.requestStartGame(properties);
-                dispose();
+                String isValid = isValid(properties, client.numPlayers());
+                if (isValid == null)
+                {
+                    client.requestStartGame(properties);
+                    dispose();
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(GamePropertiesForm.this,
+                            isValid);
+                }
             }
         });
         cancelButton = new JButton("Cancel");
@@ -124,5 +134,23 @@ public class GamePropertiesForm extends JFrame
         panel.setLayout(layout);
         add(panel);
         pack();
+    }
+
+    private static String isValid(GameProperties properties, int numPlayers)
+    {
+        if (properties.find_a_friend)
+        {
+            if (numPlayers < 4)
+                return "Need at least 4 players for 'find a friend'.";
+            else
+                return null;
+        }
+        else
+        {
+            if (numPlayers % 2 == 1)
+                return "Need even number of players.";
+            else
+                return null;
+        }
     }
 }

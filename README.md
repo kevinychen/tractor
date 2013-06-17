@@ -12,4 +12,3 @@ Tasks:
 * client should warn before special plays.
 * rotate cards in other players' hands.
 * kitty comes from wrong place.
-* set validity for game properties.
