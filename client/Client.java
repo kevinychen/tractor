@@ -28,7 +28,6 @@ public class Client
 
     public Client(View view)
     {
-        this.socket = new Socket();
         this.players = new ArrayList<Player>();
         this.view = view;
     }
@@ -40,6 +39,7 @@ public class Client
      */
     public void connect(int port, byte[] address) throws IOException
     {
+        socket = new Socket();
         socket.connect(new InetSocketAddress(InetAddress.getByAddress(address),
                 port), 30000);
 
@@ -77,7 +77,8 @@ public class Client
     {
         try
         {
-            socket.close();
+            if (socket != null)
+                socket.close();
         }
         catch (IOException e)
         {
