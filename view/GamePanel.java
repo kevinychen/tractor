@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -308,35 +309,50 @@ public class GamePanel extends JPanel
 
     private void drawCards(Graphics g)
     {
-        Set<Card> drawnCards = new HashSet<Card>();
-        // TODO paint own cards last, so that they are on top.
-        for (Player player : game.getPlayers())
+        synchronized (cardPositions)
         {
-            for (Card card : memoizeSortedHandCards(player.ID))
+            Set<Card> denotedCards = new HashSet<Card>();
+            for (Player player : game.getPlayers())
             {
-                moveCardToHand(card, player.ID);
-                drawCard(card, g);
-                drawnCards.add(card);
+                for (Card card : memoizeSortedHandCards(player.ID))
+                {
+                    moveCardToHand(card, player.ID);
+                    denotedCards.add(card);
+                }
+                for (Card card : memoizeTableCards(player.ID))
+                {
+                    moveCardToTable(card, player.ID);
+                    denotedCards.add(card);
+                }
             }
-            for (Card card : memoizeTableCards(player.ID))
+            Trick[] tricks =
+            { game.getCurrentTrick(), game.getPreviousTrick() };
+            for (Trick trick : tricks)
+                if (trick.getWinningPlay() != null)
+                    for (Play play : trick.getPlays())
+                        for (Card card : play.getCards())
+                            if (!denotedCards.contains(card))
+                            {
+                                moveCardAway(card, trick.getWinningPlay()
+                                        .getPlayerID());
+                                denotedCards.add(card);
+                            }
+            List<Card> cardsToDraw = new ArrayList<Card>(denotedCards);
+            Collections.sort(cardsToDraw, new Comparator<Card>()
             {
-                moveCardToTable(card, player.ID);
+                public int compare(Card card1, Card card2)
+                {
+                    CardPosition position1 = cardPositions.get(card1);
+                    CardPosition position2 = cardPositions.get(card2);
+                    int score1 = position1.currX() + 5 * position1.currY();
+                    int score2 = position2.currX() + 5 * position2.currY();
+                    return score1 - score2;
+                }
+            });
+
+            for (Card card : cardsToDraw)
                 drawCard(card, g);
-                drawnCards.add(card);
-            }
         }
-        Trick[] tricks =
-        { game.getCurrentTrick(), game.getPreviousTrick() };
-        for (Trick trick : tricks)
-            if (trick.getWinningPlay() != null)
-                for (Play play : trick.getPlays())
-                    for (Card card : play.getCards())
-                        if (!drawnCards.contains(card))
-                        {
-                            moveCardAway(card, trick.getWinningPlay()
-                                    .getPlayerID());
-                            drawCard(card, g);
-                        }
     }
 
     private Point deckLocation()
