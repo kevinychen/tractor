@@ -300,6 +300,7 @@ public class HumanView extends View
         notificationField.setText("New round started.");
         actionButton.setText("SHOW");
         actionButton.setVisible(true);
+        gamePanel.moveCardsToDeck();
         frame.repaint();
     }
 

@@ -451,7 +451,8 @@ public class GamePanel extends JPanel
             if (play != null)
                 cards = play.getCards();
         }
-        else if (game.getState() == Game.State.AWAITING_RESTART)
+        else if (game.getState() == Game.State.AWAITING_RESTART
+                && game.getKitty().getPlayerID() == playerID)
             cards = game.getKitty().getCards();
         else if (game.getShownCards() != null
                 && game.getShownCards().getPlayerID() == playerID)

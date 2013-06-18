@@ -11,4 +11,6 @@ Tasks:
 * synchronization.
 * client should warn before special plays.
 * rotate cards in other players' hands.
-* kitty comes from wrong place.
+* add computer player.
+* timer throws exception when game is renewed.
+* fix bugs for special plays.
