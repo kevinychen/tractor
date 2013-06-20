@@ -254,6 +254,9 @@ public class Game implements Serializable
 
     public boolean canShowCards(Play cards)
     {
+        if (state != State.AWAITING_SHOW)
+            return false;
+
         Card firstCard = cards.getCards().get(0);
         for (Card card : cards.getCards())
         {
@@ -313,7 +316,7 @@ public class Game implements Serializable
 
     public boolean canSelectFriendCards(int playerID, FriendCards friendCards)
     {
-        return properties.find_a_friend
+        return state == State.AWAITING_FRIEND_CARDS && properties.find_a_friend
                 && playerID == players.get(masterIndex).ID
                 && friendCards.size() == numFriends();
     }
@@ -333,7 +336,7 @@ public class Game implements Serializable
 
     public boolean canMakeKitty(Play cards)
     {
-        return cards.getPlayerID() == players.get(masterIndex).ID
+        return state == State.AWAITING_KITTY && cards.getPlayerID() == players.get(masterIndex).ID
                 && cards.numCards() == kittySize();
     }
 
