@@ -69,17 +69,16 @@ public class ComputerTask extends TimerTask
                     {
                         Play play = game.getCurrentTrick().getInitialPlay();
                         Card.SUIT startingSuit = suit(play.getPrimaryCard());
+                        List<Card> allowedCards = new ArrayList<Card>();
                         for (Card card : hand.getCards())
-                            if (suit(card) == startingSuit
-                                    && cards.size() < play.numCards())
-                            {
+                            if (suit(card) == startingSuit)
+                                allowedCards.add(card);
+                        for (Card card : allowedCards)
+                            if (card.frequencyIn(allowedCards) == play.numCards() && cards.size() < play.numCards())
                                 cards.add(card);
-                                for (Card otherCard : hand.getCards())
-                                    if (card.dataEquals(otherCard)
-                                            && cards.size() < play.numCards()
-                                            && !cards.contains(otherCard))
-                                        cards.add(otherCard);
-                            }
+                        for (Card card : allowedCards)
+                            if (cards.size() < play.numCards())
+                                cards.add(card);
                         for (Card card : hand.getCards())
                             if (cards.size() < play.numCards()
                                     && !cards.contains(card))
