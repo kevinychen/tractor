@@ -77,6 +77,7 @@ public class Client
     {
         try
         {
+            players.clear();
             if (socket != null)
                 socket.close();
         }
