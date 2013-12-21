@@ -475,7 +475,7 @@ public class Game implements Serializable
         for (int playerID : hands.keySet())
             if (playerID != play.getPlayerID())
                 for (Card card : hands.get(playerID).getCards())
-                    if (cardRank(card) > cardRank(minCard))
+                    if (suit(card) == suit(minCard) && cardRank(card) > cardRank(minCard))
                         return false;
 
         return true;

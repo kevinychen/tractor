@@ -13,5 +13,4 @@ Tasks:
 * rotate cards in other players' hands.
 * add computer player.
 * timer throws exception when game is renewed.
-* fix bugs for special plays.
 * cards may overlap own cards.
