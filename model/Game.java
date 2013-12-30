@@ -558,14 +558,15 @@ public class Game implements Serializable
                 2 * kitty.numPoints());
 
         /* Increment scores of players on winning team */
+        int masterTeam = teams.get(players.get(masterIndex).ID);
         int totalScore = 0;
         for (Player player : players)
-            if (teams.get(player.ID) == 1)
+            if (teams.get(player.ID) != masterTeam)
                 totalScore += currentScores.get(player.ID);
         if (totalScore >= 40 * properties.numDecks)
-            incrementPlayerScores(1, 1);
+            incrementPlayerScores(1 - masterTeam, 1);
         else
-            incrementPlayerScores(0, 1);
+            incrementPlayerScores(masterTeam, 1);
 
         view.endRound();
     }
