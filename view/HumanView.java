@@ -28,6 +28,8 @@ import model.Trick;
 
 public class HumanView extends View
 {
+    private boolean test; // flag for testing
+
     private Game game;
     private JFrame frame;
 
@@ -40,9 +42,11 @@ public class HumanView extends View
 
     private JButton actionButton;
 
-    public HumanView(String name)
+    public HumanView(String name, boolean testing)
     {
         super(name);
+
+        this.test = testing;
 
         frame = new JFrame("Tractor");
         frame.getContentPane().setBackground(Color.GREEN);
@@ -82,8 +86,10 @@ public class HumanView extends View
         {
             public void actionPerformed(ActionEvent e)
             {
-                String input = JOptionPane
-                        .showInputDialog("Enter IP: e.g. 192.168.0.1");
+                String input = "127.0.0.1";
+                if (!test)
+                    input = JOptionPane
+                            .showInputDialog("Enter IP: e.g. 192.168.0.1");
                 if (input == null)
                     return;
 
