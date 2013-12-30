@@ -83,7 +83,8 @@ public class HumanView extends View
             {
                 String input = JOptionPane
                         .showInputDialog("Enter IP: e.g. 192.168.0.1");
-                // TODO Set Cancel to go back to original state.
+                if (input == null)
+                    return;
 
                 try
                 {
