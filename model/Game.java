@@ -456,6 +456,8 @@ public class Game implements Serializable
 
     public boolean isSpecialPlay(Play play)
     {
+        if (getCurrentTrick().numPlays() > 0) // must be first player of trick
+            return false;
         if (play.numCards() == 1)
             return false;
 

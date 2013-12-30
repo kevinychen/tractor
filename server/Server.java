@@ -215,7 +215,7 @@ public class Server
                             game.drawFromDeck(currentPlayerID);
                             announce("DRAW", currentPlayerID);
                         }
-                        else if (waitSteps++ > 80)  // wait for 8 seconds for a show.
+                        else if (waitSteps++ > 80) // wait for 8s for a show.
                         {
                             game.takeKittyCards();
                             announce("TAKEKITTY");
@@ -262,8 +262,7 @@ public class Server
                 /* PLAY [cards] */
                 if (game.canPlay(play))
                 {
-                    if (game.getCurrentTrick().numPlays() == 0
-                            && game.isSpecialPlay(play)
+                    if (game.isSpecialPlay(play)
                             && !game.allowedSpecialPlay(play))
                     {
                         message(player, "NOTIFICATION", "Invalid special play.");

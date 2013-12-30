@@ -92,23 +92,26 @@ public class GamePanel extends JPanel
         }, 50, 50);
     }
 
-    public List<Card> resetSelected()
+    public List<Card> getSelected()
     {
         List<Card> selectedCards = new ArrayList<Card>();
         synchronized (cardPositions)
         {
             for (Card card : cardPositions.keySet())
-            {
-                CardPosition position = cardPositions.get(card);
-                if (position.selected())
-                {
-                    position.setSelected(false);
+                if (cardPositions.get(card).selected())
                     selectedCards.add(card);
-                }
-            }
+        }
+        return selectedCards;
+    }
+
+    public void resetSelected()
+    {
+        synchronized (cardPositions)
+        {
+            for (Card card : cardPositions.keySet())
+                cardPositions.get(card).setSelected(false);
         }
         repaint();
-        return selectedCards;
     }
 
     public void moveCardsToDeck()

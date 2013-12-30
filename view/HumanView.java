@@ -147,7 +147,7 @@ public class HumanView extends View
             {
                 if (game != null && game.started())
                 {
-                    List<Card> cards = gamePanel.resetSelected();
+                    List<Card> cards = gamePanel.getSelected();
                     if (cards.isEmpty())
                         return;
                     switch (game.getState())
@@ -167,13 +167,20 @@ public class HumanView extends View
                         case AWAITING_PLAY:
                             if (getPlayerID() == game.getCurrentPlayer().ID)
                             {
-
+                                // If special play, ask player for confirmation.
+                                if (game.isSpecialPlay(new Play(getPlayerID(),
+                                        cards)))
+                                    if (JOptionPane
+                                            .showConfirmDialog(null,
+                                                    "This is a special play. Continue?") != JOptionPane.OK_OPTION)
+                                        return;
                                 client.requestPlayCards(cards);
                                 break;
                             }
                         case AWAITING_RESTART:
                             break;
                     }
+                    gamePanel.resetSelected();
                 }
             }
         });
