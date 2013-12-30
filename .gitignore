@@ -5,3 +5,4 @@ bin/
 # Ignore Vim temporary files
 *.swp
 *~
+/bin
