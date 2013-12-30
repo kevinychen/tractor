@@ -1,5 +1,6 @@
 package server;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -92,31 +93,39 @@ public class Server
             try
             {
                 initialize();
-
-                while (true)
-                    processMessage(player, (Object[]) in.readObject());
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                e.printStackTrace();
+                System.out.println("Invalid client tried to connect.");
+                return;
             }
-            finally
+            while (true)
             {
-                if (player != null)
+                try
                 {
-                    synchronized (Server.this)
-                    {
-                        players.remove(player);
-                        outs.remove(player);
-                        if (game != null)
-                            game.removePlayer(player);
-                        announce("REMOVEPLAYER", player.ID);
-                    }
+                    processMessage(player, (Object[]) in.readObject());
                 }
+                catch (EOFException e)
+                {
+                    System.out.println("Client " + player + " left.");
+                    break;
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+            synchronized (Server.this)
+            {
+                players.remove(player);
+                outs.remove(player);
+                if (game != null)
+                    game.removePlayer(player);
+                announce("REMOVEPLAYER", player.ID);
             }
         }
 
-        void initialize() throws Exception
+        void initialize() throws IOException
         {
             synchronized (Server.this)
             {
@@ -125,7 +134,16 @@ public class Server
                 in = new ObjectInputStream(incoming.getInputStream());
 
                 /* HELLO [name] */
-                Object[] playerInfo = (Object[]) in.readObject();
+                Object[] playerInfo;
+                try
+                {
+                    playerInfo = (Object[]) in.readObject();
+                }
+                catch (ClassNotFoundException e)
+                {
+                    // Client is using invalid message encoding.
+                    throw new IOException();
+                }
                 if (playerInfo.length != 2 || !playerInfo[0].equals("HELLO"))
                     throw new IllegalArgumentException();
                 player = new Player(currentPlayerID++, (String) playerInfo[1]);
