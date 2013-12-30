@@ -141,25 +141,28 @@ public class GamePanel extends JPanel
     {
         super.paintComponent(g);
 
-        if (game == null)
-            return;
+        synchronized (view)
+        {
+            if (game == null)
+                return;
 
-        drawGameInformation(g);
-        drawGameScores(g);
-        drawSpecialInformation(g);
+            drawGameInformation(g);
+            drawGameScores(g);
+            drawSpecialInformation(g);
 
-        if (!game.started())
-            return;
+            if (!game.started())
+                return;
 
-        drawRoundScores(g);
+            drawRoundScores(g);
 
-        /* Draw deck */
-        if (game.deckHasCards())
-            drawDeck(g);
-        else if (game.getState() == Game.State.AWAITING_PLAY)
-            drawShowPreviousTrickButton(g);
+            /* Draw deck */
+            if (game.deckHasCards())
+                drawDeck(g);
+            else if (game.getState() == Game.State.AWAITING_PLAY)
+                drawShowPreviousTrickButton(g);
 
-        drawCards(g);
+            drawCards(g);
+        }
     }
 
     private void moveCard(Card card, Point point, boolean faceUp,

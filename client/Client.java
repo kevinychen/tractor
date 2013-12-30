@@ -56,7 +56,13 @@ public class Client
                     request("HELLO", view.name);
 
                     while (true)
-                        processMessage((Object[]) in.readObject());
+                    {
+                        Object obj = in.readObject();
+                        synchronized (view)
+                        {
+                            processMessage((Object[]) obj);
+                        }
+                    }
                 }
                 catch (SocketException e)
                 {
