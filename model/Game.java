@@ -27,6 +27,7 @@ public class Game implements Serializable
 
     /* index of current master (which determines round score) */
     private int masterIndex;
+    private int nextRoundMasterIndex;
 
     /* state of the game */
     public enum State
@@ -153,7 +154,7 @@ public class Game implements Serializable
         Collections.shuffle(deck, new Random(randomSeed));
 
         /* initialize other variables */
-        playerIndex = masterIndex;
+        playerIndex = masterIndex = nextRoundMasterIndex;
         shownCards = null;
         state = State.AWAITING_SHOW;
         kitty = null;
@@ -600,11 +601,12 @@ public class Game implements Serializable
     private void incrementPlayerScores(int winningTeam, int dScore)
     {
         /* Move the master to the next player on the winning team */
+        nextRoundMasterIndex = masterIndex;
         do
         {
-            masterIndex = (masterIndex + 1) % players.size();
+            nextRoundMasterIndex = (nextRoundMasterIndex + 1) % players.size();
         }
-        while (teams.get(players.get(masterIndex).ID) != winningTeam);
+        while (teams.get(players.get(nextRoundMasterIndex).ID) != winningTeam);
 
         /* Increment scores */
         for (Player player : players)
