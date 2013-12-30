@@ -215,7 +215,7 @@ public class Server
                             game.drawFromDeck(currentPlayerID);
                             announce("DRAW", currentPlayerID);
                         }
-                        else if (waitSteps++ > 30)
+                        else if (waitSteps++ > 80)  // wait for 8 seconds for a show.
                         {
                             game.takeKittyCards();
                             announce("TAKEKITTY");
