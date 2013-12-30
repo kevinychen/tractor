@@ -13,7 +13,7 @@ public class ServerMain
     {
         /* Find external IP */
         String IP = new BufferedReader(new InputStreamReader(new URL(
-                "http://api.exip.org/?call=ip").openStream())).readLine();
+                "http://icanhazip.com/").openStream())).readLine();
         System.out.println("Your IP is " + IP + ".");
 
         new Server(new NullView("[server]")).startServer(3003);
