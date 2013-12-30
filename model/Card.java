@@ -23,6 +23,9 @@ public final class Card implements Serializable
 	public static final VALUE[] values = {TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING, ACE};
     public static final SUIT[] suits = {SPADE, HEART, CLUB, DIAMOND};
 
+    public static final String[] valueStrs = "2,3,4,5,6,7,8,9,10,J,Q,K,A,Small Joker,Big Joker".split(",");
+    public static final String[] suitStrs = {"\u2660", "\u2661", "\u2662", "\u2663", "*"};
+
     public final VALUE value;
     public final SUIT suit;
     public final int ID;
@@ -75,6 +78,6 @@ public final class Card implements Serializable
     @Override
     public String toString()
     {
-        return "Card [value=" + value + ", suit=" + suit + "]";
+        return valueStrs[value.ordinal()] + suitStrs[suit.ordinal()];
     }
 }
