@@ -228,10 +228,11 @@ public class HumanView extends View
     {
         try
         {
+            notificationField.setText("Setting up server...");
+
             /* Find external IP */
             String IP = new BufferedReader(new InputStreamReader(new URL(
-                    "http://api.exip.org/?call=ip").openStream())).readLine();
-            notificationField.setText("Setting up server...");
+                    "http://icanhazip.com/").openStream())).readLine();
 
             notificationField.setText("Your IP is " + IP + ". Players:");
 
