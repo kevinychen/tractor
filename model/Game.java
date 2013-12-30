@@ -22,6 +22,9 @@ public class Game implements Serializable
 
     private GameProperties properties;
 
+    /* The round number */
+    private int roundNum;
+
     /* A map from playerID to total game score */
     private final Map<Integer, Integer> playerScores;
 
@@ -71,6 +74,7 @@ public class Game implements Serializable
         this.players = new ArrayList<Player>();
         this.properties = properties;
         this.playerIndex = 0;
+        this.roundNum = -1;  // incremented at first round to 0
         this.playerScores = new HashMap<Integer, Integer>();
         this.masterIndex = 0;
         this.hands = new HashMap<Integer, Hand>();
@@ -154,6 +158,7 @@ public class Game implements Serializable
         Collections.shuffle(deck, new Random(randomSeed));
 
         /* initialize other variables */
+        roundNum++;
         playerIndex = masterIndex = nextRoundMasterIndex;
         shownCards = null;
         state = State.AWAITING_SHOW;
@@ -295,6 +300,10 @@ public class Game implements Serializable
         }
         hands.get(cards.getPlayerID()).playCards(cards.getCards());
         view.showCards(cards);
+
+        // If this is the first round, set the master to this player.
+        if (roundNum == 0)
+            playerIndex = masterIndex = players.indexOf(getPlayerWithID(cards.getPlayerID()));
     }
 
     public Card.SUIT getTrumpSuit()
