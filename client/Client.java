@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,7 +63,7 @@ public class Client
                         }
                     }
                 }
-                catch (SocketException e)
+                catch (IOException e)
                 {
                     System.out.println("client has closed input stream");
                 }
