@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import model.Card;
@@ -37,13 +36,10 @@ public class GamePanel extends JPanel
 {
     private static final long serialVersionUID = 7889326310244251698L;
 
-    private BufferedImage[][] CARD_IMAGES;
-    private BufferedImage BIG_JOKER_IMAGE, SMALL_JOKER_IMAGE;
-    private BufferedImage CARD_BACK_IMAGE;
-
     private HumanView view;
     private Game game;
 
+    private CardImages cardImages;
     private Map<Card, CardPosition> cardPositions;
     private boolean showPreviousTrick;
 
@@ -55,18 +51,8 @@ public class GamePanel extends JPanel
 
     public void loadImages() throws IOException
     {
-        CARD_IMAGES = new BufferedImage[13][4];
-        for (int i = 0; i < CARD_IMAGES.length; i++)
-            for (int j = 0; j < CARD_IMAGES[i].length; j++)
-            {
-                String resource = String.format("/images/%c%s.gif",
-                        "shdc".charAt(j),
-                        "2 3 4 5 6 7 8 9 10 j q k 1".split(" ")[i]);
-                CARD_IMAGES[i][j] = ImageIO.read(getClass().getResource(resource));
-            }
-        BIG_JOKER_IMAGE = ImageIO.read(getClass().getResource("/images/jr.gif"));
-        SMALL_JOKER_IMAGE = ImageIO.read(getClass().getResource("/images/jb.gif"));
-        CARD_BACK_IMAGE = ImageIO.read(getClass().getResource("/images/b1fv.gif"));
+        cardImages = new CardImages();
+        cardImages.loadImages();
     }
 
     public void setGame(Game game)
@@ -120,8 +106,9 @@ public class GamePanel extends JPanel
 
     public void moveCardToHand(Card card, int playerID)
     {
+        double angle = -getAngle(playerID);
         moveCard(card, handLocation(playerID, card), !view.joinedGame()
-                || playerID == view.getPlayerID(), 0.5);
+                || playerID == view.getPlayerID(), 0.5, angle);
     }
 
     public void moveCardToTable(Card card, int playerID)
@@ -170,12 +157,18 @@ public class GamePanel extends JPanel
     private void moveCard(Card card, Point point, boolean faceUp,
             double snapRatio)
     {
+        moveCard(card, point, faceUp, snapRatio, 0);
+    }
+
+    private void moveCard(Card card, Point point, boolean faceUp,
+            double snapRatio, double dir)
+    {
         synchronized (cardPositions)
         {
             if (!cardPositions.containsKey(card))
                 cardPositions
                         .put(card, new CardPosition(deckLocation(), false));
-            cardPositions.get(card).setDest(point, faceUp, snapRatio);
+            cardPositions.get(card).setDest(point, dir, faceUp, snapRatio);
         }
     }
 
@@ -299,7 +292,9 @@ public class GamePanel extends JPanel
 
     private void drawDeck(Graphics g)
     {
-        g.drawImage(CARD_BACK_IMAGE, 415, 300, null);
+        BufferedImage image = cardImages.getCardBackImage();
+        g.drawImage(image, 450 - image.getWidth() / 2,
+                350 - image.getHeight() / 2, null);
     }
 
     private void drawShowPreviousTrickButton(Graphics g)
@@ -364,7 +359,7 @@ public class GamePanel extends JPanel
 
     private Point deckLocation()
     {
-        return new Point(415, 300);
+        return new Point(450, 350);
     }
 
     private Point handLocation(int playerID, Card card)
@@ -378,9 +373,8 @@ public class GamePanel extends JPanel
         int cardDiff = (!view.joinedGame() || playerID == view.getPlayerID()) ? 14
                 : 9;
         return new Point((int) (startX + cardDiff * Math.cos(angle)
-                * (cardIndex - cards.size() / 2.0) - 35),
-                (int) (startY - cardDiff * Math.sin(angle)
-                        * (cardIndex - cards.size() / 2.0) - 48));
+                * (cardIndex - cards.size() / 2.0)), (int) (startY - cardDiff
+                * Math.sin(angle) * (cardIndex - cards.size() / 2.0)));
     }
 
     private Point tableLocation(int playerID, Card card)
@@ -392,8 +386,8 @@ public class GamePanel extends JPanel
         List<Card> cards = memoizeTableCards(playerID);
         int cardIndex = cards.indexOf(card);
         return new Point((int) (startX + 24 * Math.cos(angle)
-                * (cardIndex - cards.size() / 2.0) - 35), (int) (startY - 24
-                * Math.sin(angle) * (cardIndex - cards.size() / 2.0) - 48));
+                * (cardIndex - cards.size() / 2.0)), (int) (startY - 24
+                * Math.sin(angle) * (cardIndex - cards.size() / 2.0)));
     }
 
     private Point awayLocation(int playerID)
@@ -418,15 +412,20 @@ public class GamePanel extends JPanel
         CardPosition position = cardPositions.get(card);
         BufferedImage image;
         if (!position.faceUp())
-            image = CARD_BACK_IMAGE;
+            image = cardImages.getCardBackImage();
         else if (card.value == Card.VALUE.BIG_JOKER)
-            image = BIG_JOKER_IMAGE;
+            image = cardImages.getBigJokerImage();
         else if (card.value == Card.VALUE.SMALL_JOKER)
-            image = SMALL_JOKER_IMAGE;
+            image = cardImages.getSmallJokerImage();
         else
-            image = CARD_IMAGES[card.value.ordinal()][card.suit.ordinal()];
+            image = cardImages.getCardImage(card.value, card.suit);
+
+        // rotate image if necessary
+        if (position.currDir() != 0)
+            image = cardImages.getRotatedImage(image, position.currDir());
         int y = position.selected() ? position.currY() - 20 : position.currY();
-        g.drawImage(image, position.currX(), y, null);
+        g.drawImage(image, position.currX() - image.getWidth() / 2,
+                y - image.getHeight() / 2, null);
     }
 
     private Map<Integer, List<Card>> sortedHandCards = new HashMap<Integer, List<Card>>();
@@ -489,10 +488,10 @@ public class GamePanel extends JPanel
             for (Card card : cards)
             {
                 CardPosition position = cardPositions.get(card);
-                if (e.getX() >= position.currX()
-                        && e.getX() < position.currX() + 71
-                        && e.getY() >= position.currY()
-                        && e.getY() < position.currY() + 96)
+                if (e.getX() >= position.currX() - 35
+                        && e.getX() < position.currX() + 35
+                        && e.getY() >= position.currY() - 48
+                        && e.getY() < position.currY() + 48)
                 {
                     position.setSelected(!position.selected());
                     break;

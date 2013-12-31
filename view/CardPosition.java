@@ -4,15 +4,17 @@ import java.awt.Point;
 
 public class CardPosition
 {
-    private double currX, currY;
+    private double currX, currY, currDir;
     private boolean faceUp, selected;
     private int destX, destY;
+    private double destDir;
     private double snapRatio;
 
     public CardPosition(Point point, boolean faceUp)
     {
         this.currX = destX = point.x;
         this.currY = destY = point.y;
+        this.currDir = destDir = 0;
         this.faceUp = faceUp;
     }
 
@@ -26,6 +28,11 @@ public class CardPosition
         return (int) currY;
     }
 
+    public double currDir()
+    {
+        return currDir;
+    }
+
     public boolean faceUp()
     {
         return faceUp;
@@ -36,10 +43,11 @@ public class CardPosition
         return selected;
     }
 
-    public void setDest(Point dest, boolean faceUp, double snapRatio)
+    public void setDest(Point dest, double dir, boolean faceUp, double snapRatio)
     {
         this.destX = dest.x;
         this.destY = dest.y;
+        this.destDir = dir;
         this.faceUp = faceUp;
         this.snapRatio = snapRatio;
     }
@@ -58,6 +66,7 @@ public class CardPosition
         {
             currX = destX;
             currY = destY;
+            currDir = destDir;
         }
     }
 }
