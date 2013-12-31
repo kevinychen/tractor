@@ -349,6 +349,8 @@ public class GamePanel extends JPanel
                 {
                     CardPosition position1 = cardPositions.get(card1);
                     CardPosition position2 = cardPositions.get(card2);
+                    if (position1.faceUp() != position2.faceUp())
+                        return position1.faceUp() ? 1 : -1;
                     int score1 = position1.currX() + 5 * position1.currY();
                     int score2 = position2.currX() + 5 * position2.currY();
                     return score1 - score2;

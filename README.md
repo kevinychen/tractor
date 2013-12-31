@@ -11,5 +11,3 @@ Tasks:
 * synchronization.
 * rotate cards in other players' hands.
 * add computer player.
-* timer throws exception when game is renewed.
-* cards may overlap own cards.
