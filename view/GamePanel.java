@@ -10,7 +10,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,14 +59,14 @@ public class GamePanel extends JPanel
         for (int i = 0; i < CARD_IMAGES.length; i++)
             for (int j = 0; j < CARD_IMAGES[i].length; j++)
             {
-                String filename = String.format("images/%c%s.gif",
+                String resource = String.format("/images/%c%s.gif",
                         "shdc".charAt(j),
                         "2 3 4 5 6 7 8 9 10 j q k 1".split(" ")[i]);
-                CARD_IMAGES[i][j] = ImageIO.read(new File(filename));
+                CARD_IMAGES[i][j] = ImageIO.read(getClass().getResource(resource));
             }
-        BIG_JOKER_IMAGE = ImageIO.read(new File("images/jr.gif"));
-        SMALL_JOKER_IMAGE = ImageIO.read(new File("images/jb.gif"));
-        CARD_BACK_IMAGE = ImageIO.read(new File("images/b1fv.gif"));
+        BIG_JOKER_IMAGE = ImageIO.read(getClass().getResource("/images/jr.gif"));
+        SMALL_JOKER_IMAGE = ImageIO.read(getClass().getResource("/images/jb.gif"));
+        CARD_BACK_IMAGE = ImageIO.read(getClass().getResource("/images/b1fv.gif"));
     }
 
     public void setGame(Game game)
