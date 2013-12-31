@@ -264,24 +264,31 @@ public class Game implements Serializable
             return false;
 
         Card firstCard = cards.getCards().get(0);
+        // Must be trumps, and must all be the same card.
         for (Card card : cards.getCards())
         {
-            if (card.value != getTrumpValue()
-                    && card.value != Card.VALUE.BIG_JOKER)
+            if (card.value != getTrumpValue() && card.suit != Card.SUIT.TRUMP)
                 return false;
             else if (!card.dataEquals(firstCard))
                 return false;
         }
         if (isShownCardsStrengthening(cards))
             return true;
-        if (firstCard.value == Card.VALUE.BIG_JOKER && shownCards != null
+        // Cannot override your own cards, unless it is a strengthening.
+        if (shownCards != null && cards.getPlayerID() == shownCards.getPlayerID())
+            return false;
+        // Cannot show just one joker.
+        if (firstCard.suit == Card.SUIT.TRUMP && cards.numCards() == 1)
+            return false;
+        // If show jokers, then must be at least as many as already shown.
+        if (firstCard.suit == Card.SUIT.TRUMP && shownCards != null
                 && cards.numCards() < shownCards.numCards())
             return false;
-        else if (firstCard.value != Card.VALUE.BIG_JOKER && shownCards != null
+        // If normal trumps, then must be more than already shown.
+        if (firstCard.suit != Card.SUIT.TRUMP && shownCards != null
                 && cards.numCards() <= shownCards.numCards())
             return false;
-        else
-            return true;
+        return true;
     }
 
     public void showCards(Play cards)
