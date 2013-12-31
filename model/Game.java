@@ -74,7 +74,7 @@ public class Game implements Serializable
         this.players = new ArrayList<Player>();
         this.properties = properties;
         this.playerIndex = 0;
-        this.roundNum = -1;  // incremented at first round to 0
+        this.roundNum = -1; // incremented at first round to 0
         this.playerScores = new HashMap<Integer, Integer>();
         this.masterIndex = 0;
         this.hands = new HashMap<Integer, Hand>();
@@ -303,7 +303,8 @@ public class Game implements Serializable
 
         // If this is the first round, set the master to this player.
         if (roundNum == 0)
-            playerIndex = masterIndex = players.indexOf(getPlayerWithID(cards.getPlayerID()));
+            playerIndex = masterIndex = players.indexOf(getPlayerWithID(cards
+                    .getPlayerID()));
     }
 
     public Card.SUIT getTrumpSuit()
@@ -346,7 +347,8 @@ public class Game implements Serializable
 
     public boolean canMakeKitty(Play cards)
     {
-        return state == State.AWAITING_KITTY && cards.getPlayerID() == players.get(masterIndex).ID
+        return state == State.AWAITING_KITTY
+                && cards.getPlayerID() == players.get(masterIndex).ID
                 && cards.numCards() == kittySize();
     }
 
@@ -481,25 +483,37 @@ public class Game implements Serializable
         return false;
     }
 
-    public boolean allowedSpecialPlay(Play play)
+    /**
+     * Returns only the cards of the special play that are valid. For example,
+     * if the special play is valid then the original play is returned.
+     * Otherwise, the lowest card set that can be beaten is returned.
+     */
+    public Play filterSpecialPlay(Play play)
     {
-        Card minCard = minCard(play);
-        for (int playerID : hands.keySet())
-            if (playerID != play.getPlayerID())
-                for (Card card : hands.get(playerID).getCards())
-                    if (suit(card) == suit(minCard) && cardRank(card) > cardRank(minCard))
-                        return false;
-
-        return true;
-    }
-
-    public Card minCard(Play play)
-    {
-        Card minCard = play.getPrimaryCard();
-        for (Card card : play.getCards())
-            if (cardRank(card) < cardRank(minCard))
-                minCard = card;
-        return minCard;
+        List<Card> cards = new ArrayList<Card>(play.getCards());
+        sortCards(cards);
+        for (Card card : cards)
+        {
+            int freq = card.frequencyIn(cards);
+            for (int playerID : hands.keySet())
+                if (playerID != play.getPlayerID())
+                {
+                    List<Card> otherCards = hands.get(playerID).getCards();
+                    for (Card otherCard : otherCards)
+                        if (suit(card) == suit(otherCard)
+                                && cardRank(otherCard) > cardRank(card)
+                                && otherCard.frequencyIn(otherCards) >= freq)
+                        {
+                            // Create a new play out of only these cards.
+                            List<Card> filteredCards = new ArrayList<Card>();
+                            for (Card card_ : cards)
+                                if (card.dataEquals(card_))
+                                    filteredCards.add(card_);
+                            return new Play(play.getPlayerID(), filteredCards);
+                        }
+                }
+        }
+        return play;
     }
 
     public void sortCards(List<Card> cards)
@@ -681,6 +695,11 @@ public class Game implements Serializable
         return suit;
     }
 
+    /*
+     * Returns a list of triples (i, j, k) where i and j are distinct cards. k
+     * is either 0 if card i and card j are the same, or 1 if card i and card j
+     * are two consecutive cards in a tractor.
+     */
     private List<int[]> getProfile(List<Card> cards)
     {
         List<int[]> profile = new ArrayList<int[]>();

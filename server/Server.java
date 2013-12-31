@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import model.Card;
 import model.FriendCards;
 import model.Game;
 import model.GameProperties;
@@ -262,12 +261,14 @@ public class Server
                 /* PLAY [cards] */
                 if (game.canPlay(play))
                 {
-                    if (game.isSpecialPlay(play)
-                            && !game.allowedSpecialPlay(play))
+                    if (game.isSpecialPlay(play))
                     {
-                        message(player, "NOTIFICATION", "Invalid special play.");
-                        Card minCard = game.minCard(play);
-                        play = new Play(player.ID, Arrays.asList(minCard));
+                        Play filteredPlay = game.filterSpecialPlay(play);
+                        if (filteredPlay != play)
+                        {
+                            message(player, "NOTIFICATION", "Invalid special play.");
+                            play = filteredPlay;
+                        }
                     }
                     game.play(play);
                     announce(command, play);
