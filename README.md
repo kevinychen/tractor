@@ -17,3 +17,5 @@ and click "Join Room" to connect to that IP.
 Or, one player with a server machine can run tractor.jar and click "Create
 Room". The IP will be shown in the top left corner. Then the other players
 can run tractor.jar and click "Join Room" to connect to that IP.
+
+![tractor](https://f.cloud.github.com/assets/1329067/1830119/2a9d350a-7323-11e3-872b-b31c3c35b7dd.png)
