@@ -31,6 +31,13 @@ public class Server
     private List<Player> players;
     private Map<Integer, ObjectOutputStream> outs;
 
+    /* Requests of players */
+    private enum Request
+    {
+        NONE, AWAITING_NEW_ROUND
+    }
+    private Map<Integer, Request> requests;
+
     private View view;
     private Game game;
     private Timer drawingCardsTimer;
@@ -40,6 +47,7 @@ public class Server
         currentPlayerID = 101;
         players = new ArrayList<Player>();
         outs = new HashMap<Integer, ObjectOutputStream>();
+        requests = new HashMap<Integer, Request>();
         this.view = view;
     }
 
@@ -177,6 +185,9 @@ public class Server
 
     protected synchronized void processMessage(Player player, Object... data)
     {
+        // Reset request.
+        requests.put(player.ID, Request.NONE);
+
         String command = (String) data[0];
 
         if (command.equals("STARTGAME"))
@@ -193,37 +204,61 @@ public class Server
         else if (command.equals("STARTROUND"))
         {
             /* STARTROUND */
-            if (game.canStartNewRound())
+            if (game == null)
             {
-                long randomSeed = System.currentTimeMillis();
-                game.startRound(randomSeed);
-                announce(command, randomSeed);
-
-                /* Start drawing */
-                drawingCardsTimer = new Timer();
-                drawingCardsTimer.schedule(new TimerTask()
-                {
-                    int waitSteps = 0;
-
-                    public void run()
-                    {
-                        int currentPlayerID = game.getCurrentPlayer().ID;
-                        if (game.started()
-                                && game.canDrawFromDeck(currentPlayerID))
-                        {
-                            game.drawFromDeck(currentPlayerID);
-                            announce("DRAW", currentPlayerID);
-                        }
-                        else if (waitSteps++ > 80) // wait for 8s for a show.
-                        {
-                            game.takeKittyCards();
-                            announce("TAKEKITTY");
-                            drawingCardsTimer.cancel();
-                        }
-                    }
-                }, 1000, 100);
+                message(player, "NOTIFICATION", "Select 'New Game' first.");
             }
-            // TODO ask other players to verify?
+            else
+            {
+                boolean startNewRound = true;
+                if (!game.canStartNewRound())
+                {
+                    requests.put(player.ID, Request.AWAITING_NEW_ROUND);
+
+                    // See if all players want to start a new round
+                    for (Player otherPlayer : players)
+                        if (requests.get(otherPlayer.ID) != Request.AWAITING_NEW_ROUND)
+                            startNewRound = false;
+                }
+                if (startNewRound)
+                {
+                    if (drawingCardsTimer != null)
+                        drawingCardsTimer.cancel();
+
+                    // Reset requests
+                    for (Player otherPlayer : players)
+                        if (requests.get(otherPlayer.ID) == Request.AWAITING_NEW_ROUND)
+                            requests.put(otherPlayer.ID, Request.NONE);
+
+                    long randomSeed = System.currentTimeMillis();
+                    game.startRound(randomSeed);
+                    announce(command, randomSeed);
+
+                    /* Start drawing */
+                    drawingCardsTimer = new Timer();
+                    drawingCardsTimer.schedule(new TimerTask()
+                    {
+                        int waitSteps = 0;
+
+                        public void run()
+                        {
+                            int currentPlayerID = game.getCurrentPlayer().ID;
+                            if (game.started()
+                                    && game.canDrawFromDeck(currentPlayerID))
+                            {
+                                game.drawFromDeck(currentPlayerID);
+                                announce("DRAW", currentPlayerID);
+                            }
+                            else if (waitSteps++ > 80) // wait for 8s for a show.
+                            {
+                                game.takeKittyCards();
+                                announce("TAKEKITTY");
+                                drawingCardsTimer.cancel();
+                            }
+                        }
+                    }, 1000, 100);
+                }
+            }
         }
         else if (command.equals("SELECTFRIEND"))
         {

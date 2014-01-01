@@ -77,6 +77,7 @@ public class Game implements Serializable
         this.roundNum = -1; // incremented at first round to 0
         this.playerScores = new HashMap<Integer, Integer>();
         this.masterIndex = 0;
+        this.state = State.AWAITING_RESTART;
         this.hands = new HashMap<Integer, Hand>();
         this.teams = new HashMap<Integer, Integer>();
         this.friendCards = new FriendCards();
@@ -144,6 +145,10 @@ public class Game implements Serializable
 
     public void startRound(long randomSeed)
     {
+        // If current round is still in progress, finish and update scores.
+        if (state != State.AWAITING_RESTART)
+            updateScores();
+
         /* make deck */
         deck = new ArrayList<Card>();
         int cardID = 101;
@@ -275,7 +280,8 @@ public class Game implements Serializable
         if (isShownCardsStrengthening(cards))
             return true;
         // Cannot override your own cards, unless it is a strengthening.
-        if (shownCards != null && cards.getPlayerID() == shownCards.getPlayerID())
+        if (shownCards != null
+                && cards.getPlayerID() == shownCards.getPlayerID())
             return false;
         // Cannot show just one joker.
         if (firstCard.suit == Card.SUIT.TRUMP && cards.numCards() == 1)
@@ -590,16 +596,7 @@ public class Game implements Serializable
                 getPreviousTrick().getWinningPlay().getPlayerID(),
                 2 * kitty.numPoints());
 
-        /* Increment scores of players on winning team */
-        int masterTeam = teams.get(players.get(masterIndex).ID);
-        int totalScore = 0;
-        for (Player player : players)
-            if (teams.get(player.ID) != masterTeam)
-                totalScore += currentScores.get(player.ID);
-        if (totalScore >= 40 * properties.numDecks)
-            incrementPlayerScores(1 - masterTeam, 1);
-        else
-            incrementPlayerScores(masterTeam, 1);
+        updateScores();
 
         view.endRound();
     }
@@ -659,6 +656,20 @@ public class Game implements Serializable
         if (shownCards != null)
             for (Card card : shownCards.getCards())
                 hands.get(shownCards.getPlayerID()).addCard(card);
+    }
+
+    private void updateScores()
+    {
+        /* Increment scores of players on winning team */
+        int masterTeam = teams.get(players.get(masterIndex).ID);
+        int totalScore = 0;
+        for (Player player : players)
+            if (teams.get(player.ID) != masterTeam)
+                totalScore += currentScores.get(player.ID);
+        if (totalScore >= 40 * properties.numDecks)
+            incrementPlayerScores(1 - masterTeam, 1);
+        else
+            incrementPlayerScores(masterTeam, 1);
     }
 
     private void update(Map<Integer, Integer> map, int key, int dValue)
