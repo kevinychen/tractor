@@ -433,6 +433,9 @@ public class GamePanel extends JPanel
 
     private List<Card> memoizeSortedHandCards(int playerID)
     {
+        if (game.getHand(playerID) == null)
+            return Collections.emptyList();
+
         List<Card> cards = game.getHand(playerID).getCards();
         if (!cards.equals(prevHandCards.get(playerID)))
         {
