@@ -449,10 +449,15 @@ public class HumanView extends View
             gamePanel.moveCardToTable(card, kitty.getPlayerID());
     }
 
-    public void notify(String notification)
+    public void notify(final String notification)
     {
-        // TODO make this a temporary message.
-        notificationField.setText(notification);
+        SwingUtilities.invokeLater(new Runnable()
+        {
+            public void run()
+            {
+                JOptionPane.showMessageDialog(null, notification);
+            }
+        });
     }
 
     public void repaint()
