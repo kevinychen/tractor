@@ -640,7 +640,7 @@ public class Game implements Serializable
         /* Increment scores */
         for (Player player : players)
             if (teams.get(player.ID) == winningTeam)
-                update(playerScores, player.ID, 1);
+                update(playerScores, player.ID, dScore);
     }
 
     private boolean isShownCardsStrengthening(Play cards)
@@ -667,9 +667,17 @@ public class Game implements Serializable
             if (teams.get(player.ID) != masterTeam)
                 totalScore += currentScores.get(player.ID);
         if (totalScore >= 40 * properties.numDecks)
-            incrementPlayerScores(1 - masterTeam, 1);
+        {
+            int dScore = (totalScore - 40 * properties.numDecks) / 40;
+            if (properties.find_a_friend)
+                dScore++;
+            incrementPlayerScores(1 - masterTeam, dScore);
+        }
         else
-            incrementPlayerScores(masterTeam, 1);
+        {
+            int dScore = (40 * properties.numDecks - totalScore) / 40 + 1;
+            incrementPlayerScores(masterTeam, dScore);
+        }
     }
 
     private void update(Map<Integer, Integer> map, int key, int dValue)
