@@ -63,10 +63,6 @@ public class Client
                         }
                     }
                 }
-                catch (IOException e)
-                {
-                    System.out.println("client has closed input stream");
-                }
                 catch (Exception e)
                 {
                     e.printStackTrace();
@@ -77,7 +73,6 @@ public class Client
                 }
             }
         }.start();
-        System.out.println("client has connected input stream");
 
         view.joinRoom();
     }
@@ -181,7 +176,6 @@ public class Client
         }
         else if (command.equals("REMOVEPLAYER"))
         {
-            // TODO the following code is incorrect.
             /* REMOVEPLAYER [playerID] */
             Player removedPlayer = null;
             for (Player player : players)

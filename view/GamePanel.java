@@ -34,7 +34,7 @@ import model.Trick;
 
 public class GamePanel extends JPanel
 {
-    private static final long serialVersionUID = 7889326310244251698L;
+    private static final long serialVersionUID = 1L;
 
     private HumanView view;
     private Game game;

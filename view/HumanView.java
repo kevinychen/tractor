@@ -408,7 +408,6 @@ public class HumanView extends View
 
     public void selectFriendCards(FriendCards friendCards)
     {
-        // TODO
     }
 
     public void makeKitty(Play play)

@@ -7,7 +7,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,7 @@ public class Server
     {
         NONE, AWAITING_NEW_ROUND
     }
+
     private Map<Integer, Request> requests;
 
     private View view;
@@ -163,6 +163,7 @@ public class Server
                     message(player, "GAMESTATE", game);
                 announce("ADDPLAYER", player);
                 message(player, "YOU", player.ID);
+                System.out.println("Client " + player + " connected.");
             }
         }
     }
@@ -249,7 +250,8 @@ public class Server
                                 game.drawFromDeck(currentPlayerID);
                                 announce("DRAW", currentPlayerID);
                             }
-                            else if (waitSteps++ > 80) // wait for 8s for a show.
+                            else if (waitSteps++ > 80) // wait for 8s for a
+                                                       // show.
                             {
                                 game.takeKittyCards();
                                 announce("TAKEKITTY");
@@ -301,7 +303,8 @@ public class Server
                         Play filteredPlay = game.filterSpecialPlay(play);
                         if (filteredPlay != play)
                         {
-                            message(player, "NOTIFICATION", "Invalid special play.");
+                            message(player, "NOTIFICATION",
+                                    "Invalid special play.");
                             play = filteredPlay;
                         }
                     }
@@ -326,7 +329,6 @@ public class Server
 
     private void announce(Object... args)
     {
-        System.out.println("Server announcing " + Arrays.toString(args));
         for (Player player : players)
             message(player, args);
     }
