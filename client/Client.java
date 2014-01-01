@@ -210,7 +210,8 @@ public class Client
         }
         else if (command.equals("NOTIFICATION"))
         {
-            // TODO notify the view.
+            /* NOTIFICATION [message] */
+            view.notify((String) data[1]);
         }
         else if (command.equals("DRAW"))
         {
