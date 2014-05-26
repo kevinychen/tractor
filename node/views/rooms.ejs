@@ -1,0 +1,111 @@
+<DOCTYPE html>
+<html>
+    <head>
+        <title>Multiplayer Tractor</title>
+        <link rel='stylesheet' href='/stylesheets/style.css' />
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="/javascripts/rooms.js"></script>
+    </head>
+    <body>
+        <div id="header">
+            <div id="name">
+                <div id="logo">Tractor</div>
+            </div>
+            <div id="personal">
+                <span id="welcome">Welcome, <%= username %>!</span>
+                <% if (isGuest) { %>
+                <span id="loginlink" class="link">
+                    Login
+                    <span id="login" class="info">
+                        <form method="post" action="/login">
+                            <table>
+                                <tr>
+                                    <td>Username:</td>
+                                    <td><input type="text" name="username" /></td>
+                                </tr>
+                                <tr>
+                                    <td>Password:</td>
+                                    <td><input type="password" name="password"></td>
+                                </tr>
+                            </table>
+                            <input type="submit" class="blue button" value="login">
+                        </form>
+                    </span>
+                </span>
+                <span id="registerlink" class="link">
+                    Register
+                </span>
+                <% } else { %>
+                <span id="profilelink" class="link">
+                    Profile
+                </span>
+                <span id="logout" class="link">Logout</span>
+                <% } %>
+            </div>
+        </div>
+        <div id="content">
+            <div id="rooms">
+                <div id="roomheader">rooms</div>
+                <div id="roomlist">
+                    <ul>
+                        <li id="room29link" class="link">
+                        Canada
+                        <span id="room29info" class="info roominfo">
+                            Owner: vhung <br/>
+                            Num people: 4 <br/>
+                            Status: in-game <br/>
+                            <span id="room29join" class="blue button join">watch</span>
+                        </span>
+                        <style>
+                            #room29link:hover #room29info {
+                                display: block;
+                            }
+                        </style>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div id="main">
+                <div id="mainheader">game</div>
+                <div id="mainroom">
+                    <img src="/images/Tractor.png" alt="">
+                </div>
+            </div>
+        </div>
+        <% if (isGuest) { %>
+        <div id="registerpopup" class="info">
+            <span id="registerstatus">Please enter your information.</span>
+            <br/>
+            <span id="registerloading">Registering...</span>
+            <br/>
+            <span id="registeralert"></span>
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><input id="registerusername" type="text" name="username" required /></td>
+                </tr>
+                <tr>
+                    <td>Email:</td>
+                    <td><input id="registeremail" type="text" name="email" required /></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input id="registerpassword" type="password" name="password" required></td>
+                </tr>
+                <tr>
+                    <td>Confirm:</td>
+                    <td><input id="registerconfirm" type="password" name="confirm" required></td>
+                </tr>
+            </table>
+            <span id="registerbutton" class="blue button">Register</span>
+            <span id="registercancel" class="cancel button">Cancel</span>
+        </div>
+        <% } else { %>
+        <div id="profilepopup" class="info">
+            Profile<br/>
+            Name: kyc<br/>
+            <span class="cancel button">Close</span>
+        </div>
+        <% } %>
+    </body>
+</html>
