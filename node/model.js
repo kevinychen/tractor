@@ -89,17 +89,37 @@ Model.prototype.emit = function(title, data) {
     }
 }
 
+Model.prototype.emitRooms = function() {
+    var me = this;
+    this.getRooms(function(err, rooms) {
+        me.emit('rooms', rooms);
+    });
+}
+
+var registeredUsernames = new Object();
 Model.prototype.setServer = function(server) {
     var me = this;
     thisio = require('socket.io').listen(server);
     thisio.on('connection', function(socket) {
-        me.getRooms(function(err, rooms) {
-            me.emit('rooms', rooms);
+        me.emitRooms();
+        socket.on('hello', function(data) {
+            registeredUsernames[data.username] = true;
+            socket.once('disconnect', function() {
+                me.leaveRoom(data.username, function(err) {
+                    registeredUsernames[data.username] = false;
+                    me.emitRooms();
+                });
+            });
         });
     });
 }
 
 Model.prototype.joinRoom = function(username, roomname, callback) {
+    if (!registeredUsernames[username]) {
+        // No hello message sent from this socket.
+        callback('Error: unregistered socket.');
+        return;
+    }
     execute('insert into rooms (roomname, status) values (?)',
             [[roomname, 'open']], function(err) {
                 if (err && err.code != 'ER_DUP_ENTRY') {

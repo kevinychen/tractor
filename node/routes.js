@@ -55,10 +55,8 @@ exports.joinroom = function(req, res) {
         if (err) {
             res.json({error: 'System error'});
         } else {
-            model.getRooms(function(err, rooms) {
-                model.emit('rooms', rooms);
-                res.json({error: false});
-            });
+            model.emitRooms();
+            res.json({error: false});
         }
     });
 }

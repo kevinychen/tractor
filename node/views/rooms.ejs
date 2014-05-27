@@ -5,6 +5,10 @@
         <link rel='stylesheet' href='/stylesheets/style.css' />
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io.connect('http://' + window.location.host);
+            socket.emit('hello', {username: "<%= username %>"});
+        </script>
         <script src="/javascripts/rooms.js"></script>
     </head>
     <body>

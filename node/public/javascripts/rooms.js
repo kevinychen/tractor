@@ -45,14 +45,13 @@ $(document).ready(function() {
     }
 
     // Create/remove room functions
-    var socket = io.connect('http://' + window.location.host);
     socket.on('rooms', function(data) {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var id = data[i].id;
             var roomname = data[i].roomname;
             var members = data[i].usernames;
-            var numMembers = members.split(',').length;
+            var numMembers = members ? members.split(',').length : 0;
             html += '<li id="room' + id + 'link" class="link">' +
                 '<span id="room' + id + 'name">' + roomname + '</span>' +
                 '<span id="room' + id + 'info" class="info roominfo">' +
