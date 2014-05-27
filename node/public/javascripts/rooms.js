@@ -50,12 +50,13 @@ $(document).ready(function() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var id = data[i].id;
-            var owner = data[i].usernames.split(',')[0];
-            var numMembers = data[i].usernames.split(',').length;
+            var roomname = data[i].roomname;
+            var members = data[i].usernames;
+            var numMembers = members.split(',').length;
             html += '<li id="room' + id + 'link" class="link">' +
-                data[i].roomname +
+                '<span id="room' + id + 'name">' + roomname + '</span>' +
                 '<span id="room' + id + 'info" class="info roominfo">' +
-                'Owner: ' + owner + '<br/>' +
+                'Members: ' + members + '<br/>' +
                 'Num people: ' + numMembers + '<br/>' +
                 'Status: ' + data[i].status + '<br/>' +
                 '<span id="room' + id + 'join" class="blue button join">join</span>' +
@@ -68,6 +69,11 @@ $(document).ready(function() {
                 '</li>';
         }
         $('#roomsul').html(html);
+        $('.join').on('click', function(e) {
+            var id = e.target.id;
+            var roomname = $('#' + id.slice(0, -4) + 'name').text();
+            $.post('/joinroom', {roomname: roomname});
+        });
     });
     socket.on('removeroom', function(data) {
         $('#room' + data.id + 'link').remove();
@@ -82,7 +88,7 @@ $(document).ready(function() {
         });
         $('#createbutton').on('click', function() {
             $('#createloading').show();
-            $.post('/createroom', {roomname: $('#createroomname').val()},
+            $.post('/joinroom', {roomname: $('#createroomname').val()},
                 function(data) {
                     if (data.error) {
                         $('#createalert').text(data.error);

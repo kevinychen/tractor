@@ -1,16 +1,16 @@
 var model = require('./model').Model;
 
 exports.rooms = function(req, res) {
-    if (req.session.username) {
-        res.render('rooms.ejs', {
-            username: req.session.username, 
-            isGuest: false
-        });
+    var complete = function() {
+        res.render('rooms.ejs', req.session);
+    };
+    if (!req.session.username) {
+        var guestId = 'guest' + Math.floor(Math.random() * 1000000000);
+        req.session.username = guestId;
+        req.session.isGuest = true;
+        model.register(guestId, '', complete);
     } else {
-        res.render('rooms.ejs', {
-            username: 'guest',
-            isGuest: true
-        });
+        complete();
     }
 }
 
@@ -38,6 +38,7 @@ exports.login = function(req, res) {
     model.login(username, password, function(err) {
         if (!err) {
             req.session.username = username;
+            req.session.isGuest = false;
         }
         res.redirect('/rooms');
     });
@@ -49,7 +50,7 @@ exports.logout = function(req, res) {
     });
 };
 
-exports.createroom = function(req, res) {
+exports.joinroom = function(req, res) {
     model.joinRoom(req.session.username, req.body.roomname, function(err) {
         if (err) {
             res.json({error: 'System error'});
