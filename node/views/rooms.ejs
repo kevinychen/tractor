@@ -4,6 +4,7 @@
         <title>Multiplayer Tractor</title>
         <link rel='stylesheet' href='/stylesheets/style.css' />
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
         <script src="/javascripts/rooms.js"></script>
     </head>
     <body>
@@ -47,21 +48,8 @@
             <div id="rooms">
                 <div id="roomheader">rooms</div>
                 <div id="roomlist">
-                    <ul>
-                        <li id="room29link" class="link">
-                        Canada
-                        <span id="room29info" class="info roominfo">
-                            Owner: vhung <br/>
-                            Num people: 4 <br/>
-                            Status: in-game <br/>
-                            <span id="room29join" class="blue button join">watch</span>
-                        </span>
-                        <style>
-                            #room29link:hover #room29info {
-                                display: block;
-                            }
-                        </style>
-                        </li>
+                    <div id="roomcreate" class="blue button">new room</div>
+                    <ul id="roomsul">
                     </ul>
                 </div>
             </div>
@@ -82,19 +70,19 @@
             <table>
                 <tr>
                     <td>Username:</td>
-                    <td><input id="registerusername" type="text" name="username" required /></td>
+                    <td><input id="registerusername" type="text" name="username" /></td>
                 </tr>
                 <tr>
                     <td>Email:</td>
-                    <td><input id="registeremail" type="text" name="email" required /></td>
+                    <td><input id="registeremail" type="text" name="email" /></td>
                 </tr>
                 <tr>
                     <td>Password:</td>
-                    <td><input id="registerpassword" type="password" name="password" required></td>
+                    <td><input id="registerpassword" type="password" name="password" /></td>
                 </tr>
                 <tr>
                     <td>Confirm:</td>
-                    <td><input id="registerconfirm" type="password" name="confirm" required></td>
+                    <td><input id="registerconfirm" type="password" name="confirm" /></td>
                 </tr>
             </table>
             <span id="registerbutton" class="blue button">Register</span>
@@ -104,8 +92,21 @@
         <div id="profilepopup" class="info">
             Profile<br/>
             Name: kyc<br/>
-            <span class="cancel button">Close</span>
+            <span id="profileclose" class="cancel button">Close</span>
         </div>
         <% } %>
+        <div id="createpopup" class="info">
+            <span id="createloading">Creating...</span>
+            <br/>
+            <span id="createalert"></span>
+            <table>
+                <tr>
+                    <td>Room name:</td>
+                    <td><input id="createroomname" type="text" name="roomname"/></td>
+                </tr>
+            </table>
+            <span id="createbutton" class="blue button">Create</span>
+            <span id="createclose" class="cancel button">Close</span>
+        </div>
     </body>
 </html>

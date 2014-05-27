@@ -151,7 +151,7 @@ table {
     text-align: center;
 }
 
-#registerpopup, #profilepopup {
+#registerpopup, #profilepopup, #createpopup {
     position: fixed;
     top: 30%;
     left: 50%;
@@ -162,7 +162,7 @@ table {
     padding: 20px;
 }
 
-#registerloading {
+#registerloading, #createloading {
     display: none;
 }
 

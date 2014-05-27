@@ -5,6 +5,7 @@
 var config = require('./config').config;
 var express = require('express');
 var http = require('http');
+var model = require('./model').Model;
 var routes = require('./routes');
 
 var app = express();
@@ -32,6 +33,9 @@ app.get('/logout', routes.logout);
 app.get('/rooms', routes.rooms);
 app.get('/room/:room', routes.rooms);
 
+app.post('/createroom', routes.createroom);
+
 var server = http.createServer(app).listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
 });
+model.setServer(server);

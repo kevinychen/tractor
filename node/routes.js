@@ -49,3 +49,16 @@ exports.logout = function(req, res) {
     });
 };
 
+exports.createroom = function(req, res) {
+    model.joinRoom(req.session.username, req.body.roomname, function(err) {
+        if (err) {
+            res.json({error: 'System error'});
+        } else {
+            model.getRooms(function(err, rooms) {
+                model.emit('rooms', rooms);
+                res.json({error: false});
+            });
+        }
+    });
+}
+
