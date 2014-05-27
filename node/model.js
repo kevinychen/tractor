@@ -9,7 +9,7 @@ function Model() {
     var c1 = function() {
         execute('drop table if exists users', [], c2);
     }, c2 = function() {
-        execute('create table users (id int auto_increment primary key, username varchar(16), password varchar(64), room varchar(64))', [], c3);
+        execute('create table users (id int auto_increment primary key, username varchar(16), password varchar(64), room varchar(64), online int)', [], c3);
     }, c3 = function() {
         execute('drop table if exists rooms', [], c4);
     }, c4 = function() {
@@ -82,6 +82,14 @@ Model.prototype.login = function(username, password, callback) {
     });
 }
 
+Model.prototype.connectUser = function(username, callback) {
+    execute('update users set online=1 where username=?', [username], callback);
+}
+
+Model.prototype.disconnectUser = function(username, callback) {
+    execute('update users set online=0 where username=?', [username], callback);
+}
+
 Model.prototype.emit = function(title, data) {
     var clients = thisio.sockets.clients();
     for (var i = 0; i < clients.length; i++) {
@@ -101,12 +109,12 @@ Model.prototype.setServer = function(server) {
     var me = this;
     thisio = require('socket.io').listen(server);
     thisio.on('connection', function(socket) {
-        me.emitRooms();
         socket.on('hello', function(data) {
-            registeredUsernames[data.username] = true;
+            me.connectUser(data.username, function(err) {
+                me.emitRooms();
+            });
             socket.once('disconnect', function() {
-                me.leaveRoom(data.username, function(err) {
-                    registeredUsernames[data.username] = false;
+                me.disconnectUser(data.username, function(err) {
                     me.emitRooms();
                 });
             });
@@ -115,18 +123,13 @@ Model.prototype.setServer = function(server) {
 }
 
 Model.prototype.joinRoom = function(username, roomname, callback) {
-    if (!registeredUsernames[username]) {
-        // No hello message sent from this socket.
-        callback('Error: unregistered socket.');
-        return;
-    }
     execute('insert into rooms (roomname, status) values (?)',
             [[roomname, 'open']], function(err) {
                 if (err && err.code != 'ER_DUP_ENTRY') {
                     callback(err);
                     return;
                 }
-                execute('update `users` set room=? where username=?',
+                execute('update users set room=? where username=?',
                     [roomname, username], callback);
             });
 }
@@ -137,7 +140,9 @@ Model.prototype.leaveRoom = function(username, callback) {
 }
 
 Model.prototype.getRooms = function(callback) {
-    execute('select rooms.id, group_concat(username) as usernames, roomname, status from rooms left join users on users.room = rooms.roomname group by roomname', [], callback);
+    execute('select rooms.id, group_concat(username) as usernames, roomname, status ' +
+           'from rooms left join users on users.room = rooms.roomname ' +
+           '&& online=1 group by roomname', [], callback);
 }
 
 module.exports.Model = new Model();
