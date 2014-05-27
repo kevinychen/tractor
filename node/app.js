@@ -34,6 +34,7 @@ app.get('/rooms', routes.rooms);
 app.get('/room/:room', routes.rooms);
 
 app.post('/joinroom', routes.joinroom);
+app.post('/leaveroom', routes.leaveroom);
 
 var server = http.createServer(app).listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));

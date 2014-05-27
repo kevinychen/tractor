@@ -104,7 +104,7 @@ Model.prototype.emitRooms = function() {
     });
 }
 
-var registeredUsernames = new Object();
+var sockets = new Object();
 Model.prototype.setServer = function(server) {
     var me = this;
     thisio = require('socket.io').listen(server);
@@ -112,8 +112,15 @@ Model.prototype.setServer = function(server) {
         socket.on('hello', function(data) {
             me.connectUser(data.username, function(err) {
                 me.emitRooms();
+                sockets[data.username] = socket;
+                me.getUser(data.username, function(err, user) {
+                    if (user.room) {
+                        me.emit('joinroom', {roomname: user.room});
+                    }
+                });
             });
             socket.once('disconnect', function() {
+                delete sockets[data.username];
                 me.disconnectUser(data.username, function(err) {
                     me.emitRooms();
                 });
@@ -129,12 +136,14 @@ Model.prototype.joinRoom = function(username, roomname, callback) {
                     callback(err);
                     return;
                 }
+                sockets[username].emit('joinroom', {roomname: roomname});
                 execute('update users set room=? where username=?',
                     [roomname, username], callback);
             });
 }
 
 Model.prototype.leaveRoom = function(username, callback) {
+    sockets[username].emit('leaveroom');
     execute('update `users` set room=null where username=?',
             [username], callback);
 }

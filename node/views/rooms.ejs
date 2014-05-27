@@ -4,11 +4,8 @@
         <title>Multiplayer Tractor</title>
         <link rel='stylesheet' href='/stylesheets/style.css' />
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script>var username = "<%= username %>";</script>
         <script src="/socket.io/socket.io.js"></script>
-        <script>
-            var socket = io.connect('http://' + window.location.host);
-            socket.emit('hello', {username: "<%= username %>"});
-        </script>
         <script src="/javascripts/rooms.js"></script>
     </head>
     <body>
@@ -58,17 +55,19 @@
                 </div>
             </div>
             <div id="main">
-                <div id="mainheader">game</div>
+                <div id="mainheader">
+                    <span id="roomname"></span>
+                </div>
                 <div id="mainroom">
+                    <span id="roomleave" class="cancel button">leave room</span>
                     <img src="/images/Tractor.png" alt="">
                 </div>
             </div>
         </div>
         <% if (isGuest) { %>
         <div id="registerpopup" class="info">
-            <span id="registerstatus">Please enter your information.</span>
-            <br/>
-            <span id="registerloading">Registering...</span>
+            <span id="registerstatus">Please enter your information.<br/></span>
+            <span id="registerloading">Registering...<br/></span>
             <br/>
             <span id="registeralert"></span>
             <table>

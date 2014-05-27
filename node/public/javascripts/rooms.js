@@ -13,6 +13,7 @@ $(document).ready(function() {
             if ($('#registerpassword').val() != $('#registerconfirm').val()) {
                 $('#registeralert').text('Your passwords do not match.');
             } else {
+                $('#registerstatus').hide();
                 $('#registerloading').show();
                 $.post('/register', {
                     username: $('#registerusername').val(),
@@ -21,9 +22,11 @@ $(document).ready(function() {
                 }, function(data) {
                     if (data.error) {
                         $('#registeralert').text(data.error);
+                        $('#registerstatus').show();
                         $('#registerloading').hide();
                     } else {
                         $('#registerloading').text('Registration successful.');
+                        $('#registeralert').text('');
                         $('#registerbutton').hide();
                         $('#registercancel').text('Close');
                     }
@@ -45,20 +48,25 @@ $(document).ready(function() {
     }
 
     // Create/remove room functions
+    var socket = io.connect('http://' + window.location.host);
+    socket.emit('hello', {username: username});
     socket.on('rooms', function(data) {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var id = data[i].id;
             var roomname = data[i].roomname;
-            var members = data[i].usernames;
-            var numMembers = members ? members.split(',').length : 0;
+            var members = data[i].usernames ? data[i].usernames.split(',') : [];
+            var numMembers = members ? members.length : 0;
             html += '<li id="room' + id + 'link" class="link">' +
                 '<span id="room' + id + 'name">' + roomname + '</span>' +
                 '<span id="room' + id + 'info" class="info roominfo">' +
-                'Members: ' + members + '<br/>' +
+                '<b>' + roomname + '</b><br/>' +
+                'Members: ' + members.join() + '<br/>' +
                 'Num people: ' + numMembers + '<br/>' +
                 'Status: ' + data[i].status + '<br/>' +
-                '<span id="room' + id + 'join" class="blue button join">join</span>' +
+                ($.inArray(username, members) == -1 ?
+                '<span id="room' + id + 'join" class="blue button join">join</span>' :
+                '<span class="cancel button leave">leave</span>') +
                 '</span>' +
                 '<style>' +
                 '#room' + id + 'link:hover #room' + id + 'info {' +
@@ -73,9 +81,20 @@ $(document).ready(function() {
             var roomname = $('#' + id.slice(0, -4) + 'name').text();
             $.post('/joinroom', {roomname: roomname});
         });
+        $('.leave').on('click', function(e) {
+            $.post('/leaveroom');
+        });
     });
     socket.on('removeroom', function(data) {
         $('#room' + data.id + 'link').remove();
+    });
+    socket.on('joinroom', function(data) {
+        $('#main').hide();
+        $('#main').slideDown();
+        $('#roomname').text(data.roomname);
+    });
+    socket.on('leaveroom', function() {
+        $('#main').slideUp();
     });
 
     $('#roomcreate').on('click', function() {
@@ -98,5 +117,8 @@ $(document).ready(function() {
                     }
                 });
         });
+    });
+    $('#roomleave').on('click', function() {
+        $.post('/leaveroom');
     });
 });

@@ -61,3 +61,14 @@ exports.joinroom = function(req, res) {
     });
 }
 
+exports.leaveroom = function(req, res) {
+    model.leaveRoom(req.session.username, function(err) {
+        if (err) {
+            res.json({error: 'System error'});
+        } else {
+            model.emitRooms();
+            res.json({error: false});
+        }
+    });
+}
+
