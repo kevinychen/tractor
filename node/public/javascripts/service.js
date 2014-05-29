@@ -1,6 +1,19 @@
 
 var gameSocket;
-//var ctx = $('#gameshow')[0].getContext('2d');
+var ctx;
+
+$(document).ready(function() {
+    ctx = $('#gameshow')[0].getContext('2d');
+});
+
+function showMsg(obj, err) {
+    obj.text(err);
+    setTimeout(function() {
+        if (obj.text() == err) {
+            obj.text('');
+        }
+    }, 3000);
+}
 
 function emitMsg(arr) {
     gameSocket.send(arr.join('__'));
@@ -13,6 +26,10 @@ function declareStatus(roomname) {
            );
 }
 
+function declareBeginGame(roomname) {
+    emitMsg(['BEGINGAME', roomname, username]);
+}
+
 function startService(params) {
     endService();
     gameSocket = new WebSocket('ws://' + params.service);
@@ -23,10 +40,10 @@ function startService(params) {
     gameSocket.onopen = function() {
         emitMsg(['HELLO', params.roomname, username]);
         var html = '';
-        html += 'Num Decks: <input id="gamestatusnumdecks" type="text" /><br/>';
+        html += 'Num Decks: 1<input id="gamestatusnumdecks" type="range" min="1" max="4"" />4<br/>';
         html += 'Find a friend: <input id="gamestatusfindafriend" type="checkbox" /><br/>';
         html += 'Game status: <span id="gamestatusstatus"></span><br/>';
-        html += 'Player list: <ul id="gamestatusplayers"></ul>';
+        html += '<ul id="gamestatusplayers"></ul>';
         html += '<span id="gamebegin" class="blue button">begin game</span>';
         $('#gameintro').html(html);
         $('#gamestatusnumdecks').bind('input', function() {
@@ -35,20 +52,30 @@ function startService(params) {
         $('#gamestatusfindafriend').click('change', function() {
             declareStatus(params.roomname);
         });
+        $('#gamebegin').on('click', function() {
+            declareBeginGame(params.roomname);
+        });
     };
     gameSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
-        if (data.status) {
+        if (data.error) {
+            showMsg($('#roomerror'), data.error);
+        } else if (data.notification) {
+            showMsg($('#roomnotification'), data.notification);
+        } else if (data.status) {
             $('#gameintro').show();
             $('#gameshow').hide();
             $('#gamestatusnumdecks').val(data.status.properties.numDecks);
             $('#gamestatusfindafriend').prop('checked', data.status.properties.find_a_friend);
-            $('#gamestatusstatus').text(data.status.status ? 'in-game' : 'awaiting players');
+            $('#gamestatusstatus').text(data.status.status);
             var playerList = '';
             for (var i = 0; i < data.status.members.length; i++) {
-                playerList += '<li>' + (i + 1) + ': ' + data.status.members[i] + '</li>';
+                playerList += '<li>Player ' + (i + 1) + ': ' + data.status.members[i] + '</li>';
             }
             $('#gamestatusplayers').html(playerList);
+        } else if (data.begin) {
+            $('#gameintro').hide();
+            $('#gameshow').slideDown();
         }
     };
 }

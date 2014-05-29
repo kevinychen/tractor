@@ -51,21 +51,21 @@ table {
 }
 
 .blue {
-    background-color: #4099FF;
+    background-color: #2079DF;
     width: 50%;
 }
 
 .blue:hover {
-    background-color: #2079DF;
+    background-color: #4099FF;
 }
 
 .cancel {
-    background-color: #D92525;
+    background-color: #B90505;
     width: 40%;
 }
 
 .cancel:hover {
-    background-color: #B90505;
+    background-color: #D92525;
 }
 
 #header {
@@ -178,6 +178,14 @@ table {
 #mainroom {
     background-color: rgba(0,0,0,0.3);
     text-align: center;
+}
+
+#roomnotification {
+    color: #EB9744;
+}
+
+#roomerror {
+    color: #D92525;
 }
 
 #gameintro, #gameshow {
