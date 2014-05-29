@@ -1,9 +1,16 @@
+function joinRoomFinish(roomname) {
+    $('#main').hide();
+    $('#main').slideDown();
+    $('#roomname').text(roomname);
+}
+
 $(document).ready(function() {
     // Login/register functions
     if ($('#registerlink').length) {
         $('#registerlink').on('click', function() {
             $('#registerpopup').show();
             $('#content').css('opacity', '0.5');
+            $('#registerusername').focus();
         });
         $('#registercancel').on('click', function() {
             $('#registerpopup').hide();
@@ -89,12 +96,13 @@ $(document).ready(function() {
         $('#room' + data.id + 'link').remove();
     });
     socket.on('joinroom', function(data) {
-        $('#main').hide();
-        $('#main').slideDown();
+        joinRoomFinish(data.roomname);
         $('#roomname').text(data.roomname);
+        startService(data);
     });
     socket.on('leaveroom', function() {
         $('#main').slideUp();
+        endService();
     });
 
     $('#roomcreate').on('click', function() {
@@ -111,12 +119,14 @@ $(document).ready(function() {
                     if (data.error) {
                         $('#createalert').text(data.error);
                     } else {
+                        joinRoomFinish(data.roomname);
                         $('#createloading').hide();
                         $('#createpopup').hide();
                         $('#content').css('opacity', 1);
                     }
                 });
         });
+        $('#createroomname').focus();
     });
     $('#roomleave').on('click', function() {
         $.post('/leaveroom');

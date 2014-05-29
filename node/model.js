@@ -9,11 +9,22 @@ function Model() {
     var c1 = function() {
         execute('drop table if exists users', [], c2);
     }, c2 = function() {
-        execute('create table users (id int auto_increment primary key, username varchar(16), password varchar(64), room varchar(64), online int)', [], c3);
+        execute('create table users (' +
+                    'id int auto_increment primary key, ' +
+                    'username varchar(16), ' +
+                    'password varchar(64), ' +
+                    'room varchar(64), ' +
+                    'online int' +
+                    ')', [], c3);
     }, c3 = function() {
         execute('drop table if exists rooms', [], c4);
     }, c4 = function() {
-        execute('create table rooms (id int auto_increment primary key, roomname varchar(64) unique, status varchar(64))', [], c5);
+        execute('create table rooms (' +
+                'id int auto_increment primary key, ' +
+                'roomname varchar(64) unique, ' +
+                'status varchar(64),' +
+                'service varchar(64)' +
+                ')', [], c5);
     }, c5 = function() {
     };
     c1();
@@ -115,7 +126,7 @@ Model.prototype.setServer = function(server) {
                 sockets[data.username] = socket;
                 me.getUser(data.username, function(err, user) {
                     if (user.room) {
-                        me.emit('joinroom', {roomname: user.room});
+                        me.joinRoom(data.username, user.room, function() {});
                     }
                 });
             });
@@ -130,13 +141,17 @@ Model.prototype.setServer = function(server) {
 }
 
 Model.prototype.joinRoom = function(username, roomname, callback) {
-    execute('insert into rooms (roomname, status) values (?)',
-            [[roomname, 'open']], function(err) {
+    var service = config.service;
+    execute('insert into rooms (roomname, status, service) values (?)',
+            [[roomname, 'open', service]], function(err) {
                 if (err && err.code != 'ER_DUP_ENTRY') {
                     callback(err);
                     return;
                 }
-                sockets[username].emit('joinroom', {roomname: roomname});
+                sockets[username].emit('joinroom', {
+                    roomname: roomname,
+                    service: service
+                });
                 execute('update users set room=? where username=?',
                     [roomname, username], callback);
             });

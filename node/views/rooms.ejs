@@ -6,6 +6,7 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script>var username = "<%= username %>";</script>
         <script src="/socket.io/socket.io.js"></script>
+        <script src="/javascripts/service.js"></script>
         <script src="/javascripts/rooms.js"></script>
     </head>
     <body>
@@ -60,7 +61,10 @@
                 </div>
                 <div id="mainroom">
                     <div id="roomleave" class="cancel button">leave room</div>
-                    <img src="/images/Tractor.png" alt="">
+                    <div id="gameintro">
+                    </div>
+                    <canvas id="gameshow" width="800px" height="600px">
+                    </canvas>
                 </div>
             </div>
         </div>

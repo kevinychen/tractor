@@ -180,6 +180,10 @@ table {
     text-align: center;
 }
 
+#gameintro, #gameshow {
+    display: none;
+}
+
 #registerpopup, #profilepopup, #createpopup {
     position: fixed;
     top: 30%;

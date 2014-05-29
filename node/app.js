@@ -40,3 +40,11 @@ var server = http.createServer(app).listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
 });
 model.setServer(server);
+
+// Start service
+var exec = require('child_process').exec;
+exec('cd service; java Server', function(err, stdout, stderr) {
+    if (err || stderr) {
+        console.log(err || stderr);
+    }
+});
