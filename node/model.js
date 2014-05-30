@@ -22,7 +22,6 @@ function Model() {
         execute('create table rooms (' +
                 'id int auto_increment primary key, ' +
                 'roomname varchar(64) unique, ' +
-                'status varchar(64),' +
                 'service varchar(64)' +
                 ')', [], c5);
     }, c5 = function() {
@@ -44,7 +43,7 @@ function execute(query, args, callback) {
 }
 
 Model.prototype.getUser = function(username, callback) {
-  execute('select * from `users` where username=?',
+  execute('select * from users where username=?',
       [username], function(err, rows) {
         if (err || rows.length == 0) {
           callback('Error obtaining user.');
@@ -74,7 +73,7 @@ Model.prototype.register = function(username, password, callback) {
             callback(err);
         } else {
             bcrypt.hash(password, salt, function(err, hash) {
-                execute('insert into `users` (username, password) values (?)',
+                execute('insert into users (username, password) values (?)',
                     [[username, hash]], callback);
             });
         }
@@ -93,12 +92,31 @@ Model.prototype.login = function(username, password, callback) {
     });
 }
 
-Model.prototype.connectUser = function(username, callback) {
-    execute('update users set online=1 where username=?', [username], callback);
+Model.prototype.getRooms = function(callback) {
+    execute('select roomname, service from rooms', [], callback);
 }
 
-Model.prototype.disconnectUser = function(username, callback) {
-    execute('update users set online=0 where username=?', [username], callback);
+Model.prototype.getService = function(roomname, callback) {
+    execute('select service from rooms where roomname=?',
+            [roomname], function(err, room) {
+                if (err) {
+                    callback(err);
+                } else if (room.length == 0) {
+                    var index = Math.floor(Math.random() * config.services.length);
+                    var service = config.services[index];
+                    execute('insert into rooms (roomname, service) values (?)',
+                        [[roomname, service]], function(err) {
+                            callback(err, service);
+                        });
+                } else {
+                    callback(false, room[0].service);
+                }
+            });
+}
+
+Model.prototype.joinRoom = function(username, roomname, callback) {
+    execute('update users set room=? where username=?',
+            [roomname, username], callback);
 }
 
 Model.prototype.emit = function(title, data) {
@@ -106,67 +124,6 @@ Model.prototype.emit = function(title, data) {
     for (var i = 0; i < clients.length; i++) {
         clients[i].emit(title, data);
     }
-}
-
-Model.prototype.emitRooms = function() {
-    var me = this;
-    this.getRooms(function(err, rooms) {
-        me.emit('rooms', rooms);
-    });
-}
-
-var sockets = new Object();
-Model.prototype.setServer = function(server) {
-    var me = this;
-    thisio = require('socket.io').listen(server);
-    thisio.on('connection', function(socket) {
-        socket.on('hello', function(data) {
-            me.connectUser(data.username, function(err) {
-                me.emitRooms();
-                sockets[data.username] = socket;
-                me.getUser(data.username, function(err, user) {
-                    if (user.room) {
-                        me.joinRoom(data.username, user.room, function() {});
-                    }
-                });
-            });
-            socket.once('disconnect', function() {
-                delete sockets[data.username];
-                me.disconnectUser(data.username, function(err) {
-                    me.emitRooms();
-                });
-            });
-        });
-    });
-}
-
-Model.prototype.joinRoom = function(username, roomname, callback) {
-    var service = config.service;
-    execute('insert into rooms (roomname, status, service) values (?)',
-            [[roomname, 'open', service]], function(err) {
-                if (err && err.code != 'ER_DUP_ENTRY') {
-                    callback(err);
-                    return;
-                }
-                sockets[username].emit('joinroom', {
-                    roomname: roomname,
-                    service: service
-                });
-                execute('update users set room=? where username=?',
-                    [roomname, username], callback);
-            });
-}
-
-Model.prototype.leaveRoom = function(username, callback) {
-    sockets[username].emit('leaveroom');
-    execute('update `users` set room=null where username=?',
-            [username], callback);
-}
-
-Model.prototype.getRooms = function(callback) {
-    execute('select rooms.id, group_concat(username) as usernames, roomname, status ' +
-           'from rooms left join users on users.room = rooms.roomname ' +
-           '&& online=1 group by roomname', [], callback);
 }
 
 module.exports.Model = new Model();

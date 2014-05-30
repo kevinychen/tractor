@@ -43,6 +43,7 @@ table {
     display: block;
     margin: 6 auto;
     border: 0;
+    border-radius: 6px;
     font-size: 16px;
     padding: 3px;
     color: #eeeeee;

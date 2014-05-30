@@ -39,16 +39,25 @@ public class Server extends WebSocketServer
     @Override
     public synchronized void onMessage(WebSocket conn, String message)
     {
-        // [COMMAND] [ROOMNAME] [USERNAME] [args]
+        // [QUERYROOM] [roomname]
+        // [command] [roomname] [username] [args]
         String[] data = message.split("__");
         String command = data[0];
+
         String roomname = data[1];
-        String username = data[2];
         if (!roomsMap.containsKey(roomname))
             roomsMap.put(roomname, new Room(roomname));
+        final Room room = roomsMap.get(roomname);
+        if (command.equals("QUERYROOM"))
+        {
+            String staticJSON = room.staticJSON();
+            send(conn, "{\"status\": " + staticJSON + "}");
+            return;
+        }
+
+        String username = data[2];
         if (!usersMap.containsKey(username))
             usersMap.put(username, new User(username));
-        final Room room = roomsMap.get(roomname);
         final User user = usersMap.get(username);
         if (command.equals("HELLO"))
         {
@@ -57,7 +66,10 @@ public class Server extends WebSocketServer
             user.socket = conn;
             if (!room.members.contains(user))
                 room.members.add(user);
-            sendStatus(room);
+            if (room.status.equals("awaiting players"))
+                sendStatus(room);
+            else
+                sendBeginGame(room);
         }
         else if (command.equals("STATUS"))
         {
@@ -80,7 +92,7 @@ public class Server extends WebSocketServer
                 String error = room.validateProperties();
                 if (error != null)
                 {
-                    conn.send("{\"error\": \"" + error + "\"}");
+                    send(conn, "{\"error\": \"" + error + "\"}");
                     return;
                 }
                 room.status = "beginning game...";
@@ -120,13 +132,19 @@ public class Server extends WebSocketServer
     {
         String staticJSON = room.staticJSON();
         for (User user : room.members)
-            user.socket.send("{\"status\": " + staticJSON + "}");
+            send(user.socket, "{\"status\": " + staticJSON + "}");
     }
 
     private void sendBeginGame(Room room)
     {
         for (User user : room.members)
-            user.socket.send("{\"begin\": \"game\"}");
+            send(user.socket, "{\"begin\": \"game\"}");
+    }
+
+    private void send(WebSocket conn, String s)
+    {
+        if (conn.isOpen())
+            conn.send(s);
     }
 
     class User

@@ -1,9 +1,13 @@
 var model = require('./model').Model;
 
-exports.rooms = function(req, res) {
+exports.home = function(req, res) {
     var complete = function() {
-        res.render('rooms.ejs', req.session);
+        model.getUser(req.session.username, function(err, user) {
+            req.session.room = user.room;
+            res.render('home.ejs', req.session);
+        });
     };
+    // Create guest username, if not logged in
     if (!req.session.username) {
         var guestId = 'guest' + Math.floor(Math.random() * 1000000000);
         req.session.username = guestId;
@@ -40,35 +44,25 @@ exports.login = function(req, res) {
             req.session.username = username;
             req.session.isGuest = false;
         }
-        res.redirect('/rooms');
+        res.redirect('/home');
     });
 };
 
 exports.logout = function(req, res) {
     req.session.regenerate(function() {
-        res.redirect('/rooms');
+        res.redirect('/home');
     });
 };
 
-exports.joinroom = function(req, res) {
-    model.joinRoom(req.session.username, req.body.roomname, function(err) {
-        if (err) {
-            res.json({error: 'System error'});
-        } else {
-            model.emitRooms();
-            res.json({error: false});
-        }
+exports.rooms = function(req, res) {
+    model.getRooms(function(err, rooms) {
+        res.json({error: err, rooms: rooms});
+    });
+};
+
+exports.join = function(req, res) {
+    model.joinRoom(req.session.username, req.body.roomname, function() {});
+    model.getService(req.body.roomname, function(err, service) {
+        res.json({error: err, service: service});
     });
 }
-
-exports.leaveroom = function(req, res) {
-    model.leaveRoom(req.session.username, function(err) {
-        if (err) {
-            res.json({error: 'System error'});
-        } else {
-            model.emitRooms();
-            res.json({error: false});
-        }
-    });
-}
-

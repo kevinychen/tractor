@@ -25,26 +25,14 @@ app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
-app.get('/', routes.rooms);
+app.get('/', routes.home);
 app.post('/register', routes.register);
 app.post('/login', routes.login);
 app.get('/logout', routes.logout);
 
 app.get('/rooms', routes.rooms);
-app.get('/room/:room', routes.rooms);
-
-app.post('/joinroom', routes.joinroom);
-app.post('/leaveroom', routes.leaveroom);
+app.post('/join', routes.join);
 
 var server = http.createServer(app).listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
-});
-model.setServer(server);
-
-// Start service
-var exec = require('child_process').exec;
-exec('cd service; java Server', function(err, stdout, stderr) {
-    if (err || stderr) {
-        console.log(err || stderr);
-    }
 });

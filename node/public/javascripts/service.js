@@ -15,46 +15,65 @@ function showMsg(obj, err) {
     }, 3000);
 }
 
-function emitMsg(arr) {
-    gameSocket.send(arr.join('__'));
+function sendMsg(conn, arr) {
+    conn.send(arr.join('__'));
+}
+
+function queryRoomStatus(roomname, service, callback) {
+    var ws = new WebSocket('ws://' + service);
+    if (ws.readyState > 1) {  // CLOSED or CLOSING
+        callback('Service error');
+        return;
+    }
+    ws.onopen = function() {
+        sendMsg(ws, ['QUERYROOM', roomname]);
+    };
+    ws.onmessage = function(msg) {
+        var data = JSON.parse(msg.data);
+        if (data.status) {
+            callback(false, data.status);
+        }
+    };
 }
 
 function declareStatus(roomname) {
-    emitMsg(['STATUS', roomname, username,
+    sendMsg(gameSocket, ['STATUS', roomname, username,
             $('#gamestatusnumdecks').val(),
             $('#gamestatusfindafriend').prop('checked')]
            );
 }
 
 function declareBeginGame(roomname) {
-    emitMsg(['BEGINGAME', roomname, username]);
+    sendMsg(gameSocket, ['BEGINGAME', roomname, username]);
 }
 
-function startService(params) {
-    endService();
-    gameSocket = new WebSocket('ws://' + params.service);
+
+var gameSocket;
+function setMainService(service, roomname) {
+    endMainService();
+    gameSocket = new WebSocket('ws://' + service);
     if (gameSocket.readyState > 1) {  // CLOSED or CLOSING
-        alert("Unable to connect to room server.");
+        alert('Upable to connect to room server.');
         return;
     }
+    var html = '';
+    html += 'Num Decks: 1<input id="gamestatusnumdecks" type="range" min="1" max="4"" />4<br/>';
+    html += 'Find a friend: <input id="gamestatusfindafriend" type="checkbox" /><br/>';
+    html += 'Game status: <span id="gamestatusstatus"></span><br/>';
+    html += '<ul id="gamestatusplayers"></ul>';
+    html += '<span id="gamebegin" class="blue button">begin game</span>';
+    $('#gameintro').html(html);
+    $('#gamestatusnumdecks').bind('input', function() {
+        declareStatus(roomname);
+    });
+    $('#gamestatusfindafriend').click('change', function() {
+        declareStatus(roomname);
+    });
+    $('#gamebegin').on('click', function() {
+        declareBeginGame(roomname);
+    });
     gameSocket.onopen = function() {
-        emitMsg(['HELLO', params.roomname, username]);
-        var html = '';
-        html += 'Num Decks: 1<input id="gamestatusnumdecks" type="range" min="1" max="4"" />4<br/>';
-        html += 'Find a friend: <input id="gamestatusfindafriend" type="checkbox" /><br/>';
-        html += 'Game status: <span id="gamestatusstatus"></span><br/>';
-        html += '<ul id="gamestatusplayers"></ul>';
-        html += '<span id="gamebegin" class="blue button">begin game</span>';
-        $('#gameintro').html(html);
-        $('#gamestatusnumdecks').bind('input', function() {
-            declareStatus(params.roomname);
-        });
-        $('#gamestatusfindafriend').click('change', function() {
-            declareStatus(params.roomname);
-        });
-        $('#gamebegin').on('click', function() {
-            declareBeginGame(params.roomname);
-        });
+        sendMsg(gameSocket, ['HELLO', roomname, username]);
     };
     gameSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
@@ -80,8 +99,9 @@ function startService(params) {
     };
 }
 
-function endService() {
+function endMainService() {
     if (gameSocket) {
         gameSocket.close();
     }
 }
+

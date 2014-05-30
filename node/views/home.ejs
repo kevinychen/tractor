@@ -5,7 +5,7 @@
         <link rel='stylesheet' href='/stylesheets/style.css' />
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script>var username = "<%= username %>";</script>
-        <script src="/socket.io/socket.io.js"></script>
+        <script>var roomname = "<%= room ? room : '' %>";</script>
         <script src="/javascripts/service.js"></script>
         <script src="/javascripts/rooms.js"></script>
     </head>
@@ -102,14 +102,12 @@
         <% } else { %>
         <div id="profilepopup" class="info">
             Profile<br/>
-            Name: kyc<br/>
+            Username: <%= username %><br/>
             <span id="profileclose" class="cancel button">Close</span>
         </div>
         <% } %>
         <div id="createpopup" class="info">
             <span id="createloading">Creating...</span>
-            <br/>
-            <span id="createalert"></span>
             <table>
                 <tr>
                     <td>Room name:</td>
