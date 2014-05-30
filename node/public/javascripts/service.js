@@ -83,7 +83,8 @@ function setMainService(service, roomname) {
             showMsg($('#roomnotification'), data.notification);
         } else if (data.status) {
             $('#gameintro').show();
-            $('#gameshow').hide();
+            $('#gamecanvas').hide();
+            $('#gamecontrols').html('');
             $('#gamestatusnumdecks').val(data.status.properties.numDecks);
             $('#gamestatusfindafriend').prop('checked', data.status.properties.find_a_friend);
             $('#gamestatusstatus').text(data.status.status);
@@ -94,7 +95,13 @@ function setMainService(service, roomname) {
             $('#gamestatusplayers').html(playerList);
         } else if (data.begin) {
             $('#gameintro').hide();
-            $('#gameshow').slideDown();
+            $('#gamecanvas').slideDown();
+            var html = '';
+            html += '<span id="gamecontrolnewround" class="blue button">New Round</span>';
+            $('#gamecontrols').html(html);
+            $('#gamecontrolnewround').on('click', function() {
+                console.log('new round');
+            });
         }
     };
 }

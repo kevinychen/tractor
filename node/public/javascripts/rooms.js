@@ -66,6 +66,7 @@ function joinRoom(room, callback) {
 
 function leaveRoom() {
     $('#main').slideUp();
+    $.post('/leave');
     endMainService();
     queryRoomsList();
 }

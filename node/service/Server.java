@@ -108,6 +108,7 @@ public class Server extends WebSocketServer
                         catch (InterruptedException e) {}
                         synchronized(Server.this)
                         {
+                            room.status = "in-game";
                             sendBeginGame(room);
                         }
                     }
@@ -244,7 +245,7 @@ public class Server extends WebSocketServer
             }
             else
             {
-                return properties.numDecks % 2 == 0 ? null :
+                return members.size() % 2 == 0 ? null :
                     "Need even number of players.";
             }
         }

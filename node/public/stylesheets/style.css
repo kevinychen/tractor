@@ -23,6 +23,7 @@ table {
 
 .link {
     color: #cccccc;
+    cursor: pointer;
 }
 
 .link:hover {
@@ -49,6 +50,7 @@ table {
     color: #eeeeee;
     text-align: center;
     max-width: 150px;
+    cursor: pointer;
 }
 
 .blue {
@@ -110,9 +112,6 @@ table {
 
 #content {
     margin: 20px;
-    height: calc(100% - 40px);
-    height: -webkit-calc(100% - 40px);
-    overflow: hidden;
 }
 
 #rooms {
@@ -130,7 +129,7 @@ table {
 
 #roomlist {
     background-color: rgba(0,0,0,0.3);
-    min-height: 50px;
+    min-height: 100%;
     text-align: center;
 }
 
@@ -149,6 +148,10 @@ table {
     padding: 3px;
 }
 
+#roomlistbuffer {
+    min-height: 100px;
+}
+
 #loginlink, #registerlink, #profilelink, #logoutlink, #roomlist li{
 }
 
@@ -164,7 +167,6 @@ table {
 #main {
     margin-left: 26%;
     min-width: 60%;
-    min-height: 60%;
     display: none;
 }
 
@@ -189,7 +191,7 @@ table {
     color: #D92525;
 }
 
-#gameintro, #gameshow {
+#gameintro, #gamecanvas {
     display: none;
 }
 

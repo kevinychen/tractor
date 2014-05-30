@@ -65,4 +65,8 @@ exports.join = function(req, res) {
     model.getService(req.body.roomname, function(err, service) {
         res.json({error: err, service: service});
     });
-}
+};
+
+exports.leave = function(req, res) {
+    model.joinRoom(req.session.username, '', function() {});
+};
