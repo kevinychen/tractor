@@ -33,7 +33,7 @@ public class Server extends WebSocketServer
         String username = socketsMap.get(conn.hashCode());
         User user = usersMap.get(username);
         user.room.members.remove(user);
-        sendStatus(user.room);
+        sendAll(user.room, user.room.stateJSON());
     }
 
     @Override
@@ -50,8 +50,7 @@ public class Server extends WebSocketServer
         final Room room = roomsMap.get(roomname);
         if (command.equals("QUERYROOM"))
         {
-            String staticJSON = room.staticJSON();
-            send(conn, "{\"status\": " + staticJSON + "}");
+            send(conn, room.statusJSON());
             return;
         }
 
@@ -66,14 +65,11 @@ public class Server extends WebSocketServer
             user.socket = conn;
             if (!room.members.contains(user))
                 room.members.add(user);
-            if (room.status.equals("awaiting players"))
-                sendStatus(room);
-            else
-                sendBeginGame(room);
+            sendAll(room, room.stateJSON());
         }
         else if (command.equals("STATUS"))
         {
-            if (!room.status.equals("awaiting players"))
+            if (room.gameStarted)
                 return;
             try
             {
@@ -83,37 +79,37 @@ public class Server extends WebSocketServer
             {
                 e.printStackTrace();
             }
-            sendStatus(room);
+            sendAll(room, room.stateJSON());
         }
         else if (command.equals("BEGINGAME"))
         {
-            if (room.status.equals("awaiting players"))
+            if (room.gameStarted)
+                return;
+            String error = room.validateProperties();
+            if (error != null)
             {
-                String error = room.validateProperties();
-                if (error != null)
-                {
-                    send(conn, "{\"error\": \"" + error + "\"}");
-                    return;
-                }
-                room.status = "beginning game...";
-                sendStatus(room);
-                new Thread()
-                {
-                    public void run()
-                    {
-                        try
-                        {
-                            Thread.sleep(3000);
-                        }
-                        catch (InterruptedException e) {}
-                        synchronized(Server.this)
-                        {
-                            room.status = "in-game";
-                            sendBeginGame(room);
-                        }
-                    }
-                }.start();
+                send(conn, "{\"error\": \"" + error + "\"}");
+                return;
             }
+            room.status = "beginning game...";
+            sendAll(room, room.stateJSON());
+            room.gameStarted = true;
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        Thread.sleep(3000);
+                    }
+                    catch (InterruptedException e) {}
+                    synchronized(Server.this)
+                    {
+                        room.status = "in-game";
+                        sendAll(room, "{\"begin\": \"game\"}");
+                    }
+                }
+            }.start();
         }
     }
 
@@ -123,132 +119,21 @@ public class Server extends WebSocketServer
         System.out.println("Error: " + ex);
     }
 
-    public static void main(String ... args) throws Exception
-    {
-        Server s = new Server(new InetSocketAddress(2916));
-        s.start();
-    }
-
-    private void sendStatus(Room room)
-    {
-        String staticJSON = room.staticJSON();
-        for (User user : room.members)
-            send(user.socket, "{\"status\": " + staticJSON + "}");
-    }
-
-    private void sendBeginGame(Room room)
-    {
-        for (User user : room.members)
-            send(user.socket, "{\"begin\": \"game\"}");
-    }
-
     private void send(WebSocket conn, String s)
     {
         if (conn.isOpen())
             conn.send(s);
     }
 
-    class User
+    private void sendAll(Room room, String s)
     {
-        String username;
-        Room room;
-        WebSocket socket;
-
-        User(String username)
-        {
-            this.username = username;
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return username.equals(((User)other).username);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return username.hashCode();
-        }
+        for (User user : room.members)
+            send(user.socket, s);
     }
 
-    class Room
+    public static void main(String ... args) throws Exception
     {
-        String roomname;
-        List<User> members;
-        GameProperties properties;
-        String status;
-        Game game;
-
-        Room(String roomname)
-        {
-            this.roomname = roomname;
-            members = new ArrayList<User>();
-            properties = new GameProperties();
-            status = "awaiting players";
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return roomname.equals(((Room)other).roomname);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return roomname.hashCode();
-        }
-
-        String staticJSON()
-        {
-            List<String> usernames = new ArrayList<String>();
-            for (User user : members)
-                usernames.add("\"" + user.username + "\"");
-            return String.format("{" +
-                    "\"roomname\": \"%s\", " +
-                    "\"properties\": {" +
-                        "\"numDecks\": %d, " +
-                        "\"find_a_friend\": %b" +
-                    "}, " +
-                    "\"status\": \"%s\", " +
-                    "\"members\": %s " +
-                    "}",
-                    roomname,
-                    properties.numDecks,
-                    properties.find_a_friend,
-                    status,
-                    usernames
-                    );
-        }
-
-        void parse(String[] data)
-        {
-            roomname = data[1];
-            properties.numDecks = Integer.parseInt(data[3]);
-            properties.find_a_friend = Boolean.parseBoolean(data[4]);
-            /*
-               status = Boolean.parseBoolean(data[5]);
-               members.clear();
-               int numMembers = Integer.parseInt(data[6]);
-               for (int i = 0; i < numMembers; i++)
-               members.add(usersMap.get(data[7 + i]));
-               */
-        }
-
-        String validateProperties()
-        {
-            if (properties.find_a_friend)
-            {
-                return members.size() >= 4 ? null :
-                    "Need at least 4 players for 'find a friend'.";
-            }
-            else
-            {
-                return members.size() % 2 == 0 ? null :
-                    "Need even number of players.";
-            }
-        }
+        Server s = new Server(new InetSocketAddress(2916));
+        s.start();
     }
 }
-

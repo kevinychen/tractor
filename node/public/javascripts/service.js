@@ -29,10 +29,7 @@ function queryRoomStatus(roomname, service, callback) {
         sendMsg(ws, ['QUERYROOM', roomname]);
     };
     ws.onmessage = function(msg) {
-        var data = JSON.parse(msg.data);
-        if (data.status) {
-            callback(false, data.status);
-        }
+        callback(false, JSON.parse(msg.data));
     };
 }
 
@@ -47,6 +44,11 @@ function declareBeginGame(roomname) {
     sendMsg(gameSocket, ['BEGINGAME', roomname, username]);
 }
 
+function attachControl(label, func) {
+    $('#gamecontrol').off('click');
+    $('#gamecontrol').text(label);
+    $('#gamecontrol').on('click', func);
+}
 
 var gameSocket;
 function setMainService(service, roomname) {
@@ -56,12 +58,12 @@ function setMainService(service, roomname) {
         alert('Upable to connect to room server.');
         return;
     }
+
     var html = '';
     html += 'Num Decks: 1<input id="gamestatusnumdecks" type="range" min="1" max="4"" />4<br/>';
     html += 'Find a friend: <input id="gamestatusfindafriend" type="checkbox" /><br/>';
     html += 'Game status: <span id="gamestatusstatus"></span><br/>';
     html += '<ul id="gamestatusplayers"></ul>';
-    html += '<span id="gamebegin" class="blue button">begin game</span>';
     $('#gameintro').html(html);
     $('#gamestatusnumdecks').bind('input', function() {
         declareStatus(roomname);
@@ -69,9 +71,10 @@ function setMainService(service, roomname) {
     $('#gamestatusfindafriend').click('change', function() {
         declareStatus(roomname);
     });
-    $('#gamebegin').on('click', function() {
+    attachControl('begin game', function() {
         declareBeginGame(roomname);
     });
+
     gameSocket.onopen = function() {
         sendMsg(gameSocket, ['HELLO', roomname, username]);
     };
@@ -79,12 +82,21 @@ function setMainService(service, roomname) {
         var data = JSON.parse(msg.data);
         if (data.error) {
             showMsg($('#roomerror'), data.error);
-        } else if (data.notification) {
+        }
+        if (data.notification) {
             showMsg($('#roomnotification'), data.notification);
+        }
+        if (data.begin) {
+            $('#gameintro').hide();
+            $('#gamecanvas').slideDown();
+        }
+        if (data.gameStarted) {
+            attachControl('new round', function() {
+                sendMsg(gameSocket, ['NEWROUND', roomname, username]);
+            });
         } else if (data.status) {
             $('#gameintro').show();
             $('#gamecanvas').hide();
-            $('#gamecontrols').html('');
             $('#gamestatusnumdecks').val(data.status.properties.numDecks);
             $('#gamestatusfindafriend').prop('checked', data.status.properties.find_a_friend);
             $('#gamestatusstatus').text(data.status.status);
@@ -93,15 +105,6 @@ function setMainService(service, roomname) {
                 playerList += '<li>Player ' + (i + 1) + ': ' + data.status.members[i] + '</li>';
             }
             $('#gamestatusplayers').html(playerList);
-        } else if (data.begin) {
-            $('#gameintro').hide();
-            $('#gamecanvas').slideDown();
-            var html = '';
-            html += '<span id="gamecontrolnewround" class="blue button">New Round</span>';
-            $('#gamecontrols').html(html);
-            $('#gamecontrolnewround').on('click', function() {
-                console.log('new round');
-            });
         }
     };
 }
