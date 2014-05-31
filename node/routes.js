@@ -44,13 +44,13 @@ exports.login = function(req, res) {
             req.session.username = username;
             req.session.isGuest = false;
         }
-        res.redirect('/home');
+        res.redirect('/');
     });
 };
 
 exports.logout = function(req, res) {
     req.session.regenerate(function() {
-        res.redirect('/home');
+        res.redirect('/');
     });
 };
 
