@@ -1,9 +1,16 @@
 
 var gameSocket;
 var ctx;
+var width, height;
+var imgWidth, imgHeight;
 
 $(document).ready(function() {
-    ctx = $('#gameshow')[0].getContext('2d');
+    var canvas = $('#gameshow')[0];
+    ctx = canvas.getContext('2d');
+    width = canvas.width;
+    height = canvas.height;
+    ctx.translate(width / 2, height / 2);
+    loadCardImages();
 });
 
 function showMsg(obj, err) {
@@ -56,7 +63,12 @@ function attachControl(label, func) {
 }
 
 var gameSocket;
-var cardValues = new Array();
+var cardValues = new Object();
+var selectedCards = new Object();
+var cardImages = new Object();
+var showPrev = false;
+var cache;
+
 function setMainService(service, roomname) {
     endMainService();
     gameSocket = new WebSocket('ws://' + service);
@@ -93,6 +105,9 @@ function setMainService(service, roomname) {
             showMsg($('#roomnotification'), data.notification);
         }
         if (data.card) {
+            if (!(data.card.id in cardValues)) {
+                cardValues[data.card.id] = new Object();
+            }
             cardValues[data.card.id] = data.card;
         }
         if (data.gameStarted) {
@@ -100,10 +115,7 @@ function setMainService(service, roomname) {
             if ($('#gamecanvas').is(':hidden')) {
                 $('#gamecanvas').slideDown();
             }
-            attachControl('new round', function() {
-                sendConv('NEWROUND', []);
-            });
-            drawGame(data.game);
+            drawGame(data.status, data.game);
         } else if (data.status) {
             $('#gameintro').show();
             $('#gamecanvas').hide();
@@ -125,6 +137,145 @@ function endMainService() {
     }
 }
 
-function drawGame(game) {
-    console.log(game);
+function loadCardImages() {
+    var suits = {SPADE: 's', HEART: 'h', DIAMOND: 'd', CLUB: 'c'};
+    var values = {TWO: '2', THREE: '3', FOUR: '4', FIVE: '5',
+        SIX: '6', SEVEN: '7', EIGHT: '8', NINE: '9', TEN: '10',
+        JACK: 'j', QUEEN: 'q', KING: 'k', ACE: '1'};
+    for (var suitName in suits) {
+        cardImages[suitName] = new Object();
+        for (var valueName in values) {
+            cardImages[suitName][valueName] = new Image();
+            cardImages[suitName][valueName].src =
+                '/images/cards/' + suits[suitName] + values[valueName] + '.gif';
+        }
+    }
+    cardImages.TRUMP = new Object();
+    cardImages.TRUMP.SMALL_JOKER = new Image();
+    cardImages.TRUMP.SMALL_JOKER.src = '/images/cards/jb.gif';
+    cardImages.TRUMP.BIG_JOKER = new Image();
+    cardImages.TRUMP.BIG_JOKER.src = '/images/cards/jr.gif';
+    cardImages.BACK = new Image();
+    cardImages.BACK.src = '/images/cards/b1fv.gif';
+    cardImages.BACK.onload = function() {
+        imgWidth = cardImages.BACK.width;
+        imgHeight = cardImages.BACK.height;
+    };
+}
+
+function showPlay(myIndex, distance, separation, play, baseAngle) {
+    for (var playerID in play) {
+        var cards = play[playerID];
+        var arrow = new Arrow();
+        arrow.rotate(baseAngle * (myIndex - playerID));
+        arrow.translate(0, distance);
+        arrow.scale(width / 2, height / 2);
+
+        arrow.translate(-cards.length / 2 * separation, 0);
+        for (var i = 0; i < cards.length; i++) {
+            if (!(cards[i] in cardValues)) {
+                cardValues[cards[i]] = new Object();
+            }
+            cardValues[cards[i]].goal = jQuery.extend(true, {}, arrow);
+            arrow.translate(separation, 0);
+        }
+    }
+}
+
+function drawGame(status, game) {
+    // update game control button
+    if (!game.state || game.state == 'AWAITING_RESTART') {
+        attachControl('new round', function() {
+            sendConv('NEWROUND', []);
+        });
+    } else if (game.state == 'AWAITING_SHOW') {
+        attachControl('show', function() {
+            var cards = Object.keys(selectedCards);
+            sendConv('SHOW', [cards.length] + cards);
+        });
+    } else if (game.state == 'AWAITING_KITTY') {
+        attachControl('make kitty', function() {
+            var cards = Object.keys(selectedCards);
+            sendConv('MAKEKITTY', [cards.length] + cards);
+        });
+    } else if (game.state == 'AWAITING_PLAY') {
+        attachControl('play', function() {
+            var cards = Object.keys(selectedCards);
+            sendConv('PLAY', [cards.length] + cards);
+        });
+    }
+
+    // draw game information
+    var trump = game.trumpValue ?
+        game.trumpValue + ', ' + game.trumpSuit : 'undeclared';
+    var playerScores = [];
+    for (var playerID in game.gameScores) {
+        playerScores.push(
+                status.members[playerID] + ': ' + game.gameScores[playerID]);
+    }
+    var roundScores = [];
+    for (var team in game.roundScores) {
+        roundScores.push(team + ': ' + game.roundScores[team]);
+    }
+    $('#gameinfo').html(
+            'TRUMP: ' + trump + '<br/>' +
+            'MASTER: ' + status.members[game.master] + '<br/>' +
+            'GAME SCORES: ' + playerScores.join(', ') + '<br/>' +
+            'ROUND SCORES: ' + roundScores.join(', ') + '<br/>'
+            );
+
+    // update card positions
+    var myIndex = $.inArray(username, status.members);
+    var baseAngle = 2 * Math.PI / status.members.length;
+    if (game.state == 'AWAITING_RESTART' && game.kitty) {
+        showPlay(myIndex, 0.4, 20, game.kitty, baseAngle);
+    }
+    if ((game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') &&
+            game.shown) {
+                showPlay(myIndex, 0.4, 20, game.shown, baseAngle);
+            }
+    if (game.state != 'AWAITING_RESTART' && game.hands) {
+        showPlay(myIndex, 0.7, 10, game.hands, baseAngle);
+    }
+    if (game.state == 'AWAITING_PLAY') {
+        if (showPrev && game.currTrick) {
+            showPlay(myIndex, 0.4, 20, game.currTrick, baseAngle);
+        }
+    }
+
+    cache = {status: status, game: game};
+    drawCanvas();
+}
+
+function drawCanvas() {
+    // prepare for drawing the canvas
+    ctx.clearRect(-width / 2, -height / 2, width, height);
+    var status = cache.status, game = cache.game;
+    var myIndex = $.inArray(username, status.members);
+    var baseAngle = 2 * Math.PI / status.members.length;
+
+    // draw player names
+    ctx.save();
+    ctx.font = '18px Arial';
+    ctx.fillStyle = 'white';
+    for (var i = 0; i < status.members.length; i++) {
+        var arrow = new Arrow();
+        arrow.rotate(baseAngle * (myIndex - i));
+        arrow.translate(0, 0.9);
+        arrow.scale(width / 2, height / 2);
+
+        ctx.save();
+        arrow.setContext(ctx);
+        var strWidth = ctx.measureText(status.members[i]).width;
+        ctx.fillText(status.members[i], -strWidth / 2, 0);
+        ctx.restore();
+    }
+    ctx.restore();
+
+    for (var card in cardValues) {
+        ctx.save();
+        cardValues[card].goal.setContext(ctx);
+        ctx.drawImage(cardImages.BACK, -imgWidth / 2, -imgHeight / 2);
+        ctx.restore();
+    }
 }

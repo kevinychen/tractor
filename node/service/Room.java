@@ -134,22 +134,23 @@ class Room
         }
     }
 
-    static String cardToJSON(Card card)
+    String cardToJSON(Card card)
     {
         return String.format(
                 "{\"id\": %d, \"suit\": \"%s\", \"value\": \"%s\"}",
                 card.ID, card.suit, card.value);
     }
 
-    static String cardsToJSON(List<Card> cards)
+    String cardsToJSON(List<Card> cards)
     {
+        game.sortCards(cards);
         List<Integer> ids = new ArrayList<Integer>();
         for (Card card : cards)
             ids.add(card.ID);
         return ids.toString();
     }
 
-    static String handsToJSON(Game game)
+    String handsToJSON(Game game)
     {
         Map<String, String> json = new HashMap<String, String>();
         for (Player player : game.getPlayers())
@@ -158,7 +159,7 @@ class Room
         return json.toString().replace('=', ':');
     }
 
-    static String playToJSON(Play play)
+    String playToJSON(Play play)
     {
         if (play == null)
             return "false";
@@ -169,7 +170,7 @@ class Room
         return json.toString().replace('=', ':');
     }
 
-    static String trickToJSON(Trick trick)
+    String trickToJSON(Trick trick)
     {
         if (trick == null)
             return "false";
@@ -184,7 +185,7 @@ class Room
         return json.toString().replace('=', ':');
     }
 
-    static String friendCardsToJSON(FriendCards friendCards)
+    String friendCardsToJSON(FriendCards friendCards)
     {
         if (friendCards == null)
             return "false";
@@ -195,7 +196,7 @@ class Room
         return json.toString().replace('=', ':');
     }
 
-    static <K, V> String mapToJSON(Map<K, V> map)
+    <K, V> String mapToJSON(Map<K, V> map)
     {
         Map<String, String> json = new HashMap<String, String>();
         for (Map.Entry<K, V> entry : map.entrySet())

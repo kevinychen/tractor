@@ -6,6 +6,7 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script>var username = "<%= username %>";</script>
         <script>var roomname = "<%= room ? room : '' %>";</script>
+        <script src="/javascripts/transform.js"></script>
         <script src="/javascripts/service.js"></script>
         <script src="/javascripts/rooms.js"></script>
     </head>
@@ -69,7 +70,8 @@
                     <div id="gameintro">
                     </div>
                     <div id="gamecanvas">
-                        <canvas id="gameshow" width="800px" height="500px">
+                        <div id="gameinfo"></div>
+                        <canvas id="gameshow" width="800px" height="600px">
                         </canvas>
                     </div>
                     <div id="gamecontrols">
