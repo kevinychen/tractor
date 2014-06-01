@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -40,7 +41,7 @@ public class Game implements Serializable
 
     private State state;
 
-    private List<Card> deck;
+    private LinkedList<Card> deck;
 
     /* index of current card drawer / current card player */
     private int playerIndex;
@@ -150,7 +151,7 @@ public class Game implements Serializable
             updateScores();
 
         /* make deck */
-        deck = new ArrayList<Card>();
+        deck = new LinkedList<Card>();
         int cardID = 101;
         for (int deckNum = 0; deckNum < properties.numDecks; deckNum++)
         {
@@ -226,14 +227,14 @@ public class Game implements Serializable
         return deck.size() > kittySize() && getCurrentPlayer().ID == playerID;
     }
 
-    public boolean deckHasCards()
+    public LinkedList<Card> getDeck()
     {
-        return deck != null && !deck.isEmpty();
+        return new LinkedList<Card>(deck);
     }
 
     public void drawFromDeck(int playerID)
     {
-        Card card = deck.remove(deck.size() - 1);
+        Card card = deck.removeLast();
         hands.get(playerID).addCard(card);
         playerIndex = (playerIndex + 1) % players.size();
         view.drawCard(card, playerID);

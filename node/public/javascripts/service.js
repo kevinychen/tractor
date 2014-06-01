@@ -19,6 +19,11 @@ function sendMsg(conn, arr) {
     conn.send(arr.join('__'));
 }
 
+function sendConv(command, args) {
+    // convenience method
+    sendMsg(gameSocket, [command, roomname, username].concat(args));
+}
+
 function queryRoomStatus(roomname, service, callback) {
     var ws = new WebSocket('ws://' + service);
     if (ws.readyState > 1) {  // CLOSED or CLOSING
@@ -34,14 +39,14 @@ function queryRoomStatus(roomname, service, callback) {
 }
 
 function declareStatus(roomname) {
-    sendMsg(gameSocket, ['STATUS', roomname, username,
+    sendConv('STATUS', [
             $('#gamestatusnumdecks').val(),
-            $('#gamestatusfindafriend').prop('checked')]
-           );
+            $('#gamestatusfindafriend').prop('checked')
+            ]);
 }
 
 function declareBeginGame(roomname) {
-    sendMsg(gameSocket, ['BEGINGAME', roomname, username]);
+    sendConv('BEGINGAME', []);
 }
 
 function attachControl(label, func) {
@@ -51,6 +56,7 @@ function attachControl(label, func) {
 }
 
 var gameSocket;
+var cardValues = new Array();
 function setMainService(service, roomname) {
     endMainService();
     gameSocket = new WebSocket('ws://' + service);
@@ -76,7 +82,7 @@ function setMainService(service, roomname) {
     });
 
     gameSocket.onopen = function() {
-        sendMsg(gameSocket, ['HELLO', roomname, username]);
+        sendConv('HELLO', []);
     };
     gameSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
@@ -86,14 +92,18 @@ function setMainService(service, roomname) {
         if (data.notification) {
             showMsg($('#roomnotification'), data.notification);
         }
-        if (data.begin) {
-            $('#gameintro').hide();
-            $('#gamecanvas').slideDown();
+        if (data.card) {
+            cardValues[data.card.id] = data.card;
         }
         if (data.gameStarted) {
+            $('#gameintro').hide();
+            if ($('#gamecanvas').is(':hidden')) {
+                $('#gamecanvas').slideDown();
+            }
             attachControl('new round', function() {
-                sendMsg(gameSocket, ['NEWROUND', roomname, username]);
+                sendConv('NEWROUND', []);
             });
+            drawGame(data.game);
         } else if (data.status) {
             $('#gameintro').show();
             $('#gamecanvas').hide();
@@ -115,3 +125,6 @@ function endMainService() {
     }
 }
 
+function drawGame(game) {
+    console.log(game);
+}
