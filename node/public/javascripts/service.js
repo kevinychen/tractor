@@ -11,6 +11,7 @@ $(document).ready(function() {
     height = canvas.height;
     ctx.translate(width / 2, height / 2);
     loadCardImages();
+    addCardSelectionListener(canvas);
 });
 
 function showMsg(obj, err) {
@@ -105,9 +106,6 @@ function setMainService(service, roomname) {
             showMsg($('#roomnotification'), data.notification);
         }
         if (data.card) {
-            if (!(data.card.id in cardValues)) {
-                cardValues[data.card.id] = new Object();
-            }
             cardValues[data.card.id] = data.card;
         }
         if (data.gameStarted) {
@@ -163,8 +161,52 @@ function loadCardImages() {
     };
 }
 
-function showPlay(myIndex, distance, separation, play, baseAngle) {
+const TABLE_PLACE = 0.4;
+const HAND_PLACE = 0.7;
+const OUT_PLACE = 2.0;
+const BIG_SEP = 20;
+const MEDIUM_SEP = 15;
+const SMALL_SEP = 10;
+const SELECT_DIFF = 20;
+
+function addCardSelectionListener(canvas) {
+    canvas.onmousedown = function() { return false; };
+    canvas.addEventListener('mousedown', function(e) {
+        if (!cache.cards) {
+            return;
+        }
+        var rect = canvas.getBoundingClientRect();
+        var x = e.clientX - rect.left - width / 2;
+        var y = e.clientY - rect.top - height / 2;
+        var myIndex = $.inArray(username, cache.status.members);
+        var hand = cache.game.hands[myIndex];
+        var topCard = null;
+        for (var i = 0; i < hand.length; i++) {
+            if (hand[i] in cardValues) {
+                var card = cardValues[hand[i]];
+                if (card.goal &&
+                    Math.abs(x - card.goal.base.x) < imgWidth / 2 &&
+                    Math.abs(y - card.goal.base.y) < imgHeight / 2 &&
+                    (!topCard || cardCompareFunction(card, topCard) > 0)) {
+                        topCard = card;
+                    }
+            }
+        }
+        if (topCard) {
+            selectedCards[topCard.id] ^= 1;
+            updateCardPositions();
+        }
+    });
+}
+
+function setCardsGoal(myIndex, place, play, baseAngle) {
+    // myIndex: index of myself in the status.members array
+    // place: 'table', 'hand', 'out'
+    var distance = place == 'table' ? TABLE_PLACE :
+        (place == 'hand' ? HAND_PLACE : OUT_PLACE);
     for (var playerID in play) {
+        var separation = place == 'table' ? BIG_SEP :
+            (myIndex == playerID ? MEDIUM_SEP : SMALL_SEP);
         var cards = play[playerID];
         var arrow = new Arrow();
         arrow.rotate(baseAngle * (myIndex - playerID));
@@ -174,9 +216,13 @@ function showPlay(myIndex, distance, separation, play, baseAngle) {
         arrow.translate(-cards.length / 2 * separation, 0);
         for (var i = 0; i < cards.length; i++) {
             if (!(cards[i] in cardValues)) {
-                cardValues[cards[i]] = new Object();
+                cardValues[cards[i]] = {id: cards[i]};
             }
             cardValues[cards[i]].goal = jQuery.extend(true, {}, arrow);
+            if (place == 'hand' && selectedCards[cards[i]]) {
+                // move selected cards slightly upwards
+                cardValues[cards[i]].goal.base.y -= SELECT_DIFF;
+            }
             arrow.translate(separation, 0);
         }
     }
@@ -223,28 +269,35 @@ function drawGame(status, game) {
             'GAME SCORES: ' + playerScores.join(', ') + '<br/>' +
             'ROUND SCORES: ' + roundScores.join(', ') + '<br/>'
             );
+    cache = {status: status, game: game};
+    updateCardPositions();
+}
 
-    // update card positions
+function updateCardPositions() {
+    var status = cache.status, game = cache.game;
     var myIndex = $.inArray(username, status.members);
     var baseAngle = 2 * Math.PI / status.members.length;
     if (game.state == 'AWAITING_RESTART' && game.kitty) {
-        showPlay(myIndex, 0.4, 20, game.kitty, baseAngle);
+        setCardsGoal(myIndex, 'table', game.kitty, baseAngle);
     }
     if ((game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') &&
             game.shown) {
-                showPlay(myIndex, 0.4, 20, game.shown, baseAngle);
+                setCardsGoal(myIndex, 'table', game.shown, baseAngle);
             }
     if (game.state != 'AWAITING_RESTART' && game.hands) {
-        showPlay(myIndex, 0.7, 10, game.hands, baseAngle);
+        setCardsGoal(myIndex, 'hand', game.hands, baseAngle);
     }
     if (game.state == 'AWAITING_PLAY') {
         if (showPrev && game.currTrick) {
-            showPlay(myIndex, 0.4, 20, game.currTrick, baseAngle);
+            setCardsGoal(myIndex, 'table', game.currTrick, baseAngle);
         }
     }
-
-    cache = {status: status, game: game};
     drawCanvas();
+}
+
+function cardCompareFunction(card1, card2) {
+    return (2 * card1.goal.base.x + card1.goal.base.y) -
+        (2 * card2.goal.base.x + card2.goal.base.y);
 }
 
 function drawCanvas() {
@@ -272,10 +325,24 @@ function drawCanvas() {
     }
     ctx.restore();
 
-    for (var card in cardValues) {
-        ctx.save();
-        cardValues[card].goal.setContext(ctx);
+    // draw deck if cards remain
+    if (game.deck) {
         ctx.drawImage(cardImages.BACK, -imgWidth / 2, -imgHeight / 2);
+    }
+
+    // draw all the cards
+    cache.cards = new Array();
+    for (var cardID in cardValues) {
+        cache.cards.push(cardValues[cardID]);
+    }
+    cache.cards.sort(cardCompareFunction);
+    for (var i = 0; i < cache.cards.length; i++) {
+        var card = cache.cards[i];
+        ctx.save();
+        card.goal.setContext(ctx);
+        var image = (card.suit && card.value ?
+                cardImages[card.suit][card.value] : cardImages.BACK);
+        ctx.drawImage(image, -imgWidth / 2, -imgHeight / 2);
         ctx.restore();
     }
 }
