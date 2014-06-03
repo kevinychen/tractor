@@ -258,6 +258,7 @@ class Room
 
             if (game.getState() != Game.State.AWAITING_RESTART)
             {
+                obj.put("currPlayer", game.getCurrentPlayer().ID);
                 obj.put("deck", cardsToJSON(game.getDeck()));
                 obj.put("currTrick", trickToJSON(game.getCurrentTrick()));
                 obj.put("prevTrick", trickToJSON(game.getPreviousTrick()));

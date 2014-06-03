@@ -54,6 +54,7 @@ function declareBeginGame(roomname) {
 }
 
 function attachControl(label, func) {
+    $('#gamecontrol').show();
     $('#gamecontrol').off('click');
     $('#gamecontrol').text(label);
     $('#gamecontrol').on('click', func);
@@ -106,7 +107,12 @@ function setMainService(service, roomname) {
             if ($('#gamecanvas').is(':hidden')) {
                 $('#gamecanvas').slideDown();
             }
-            drawGame(data.status, data.game, data.cards);
+            cache = data;
+            if (cache.game.players) {
+                cache.myIndex = $.inArray(username, cache.game.players);
+                cache.baseAngle = 2 * Math.PI / cache.game.players.length;
+            }
+            drawGame();
         } else if (data.status) {
             $('#gameintro').show();
             $('#gamecanvas').hide();
@@ -171,8 +177,7 @@ function addCardSelectionListener(canvas) {
         if (!cache.game || !cache.game.hands) {
             return;
         }
-        var myIndex = $.inArray(username, cache.game.players);
-        var hand = cache.game.hands[myIndex];
+        var hand = cache.game.hands[cache.myIndex];
         if (!hand) {
             return;
         }
@@ -194,15 +199,18 @@ function addCardSelectionListener(canvas) {
     });
 }
 
-function setCardsGoal(myIndex, place, play, baseAngle) {
+function setCardsGoal(place, play) {
     var distance = place == 'table' ? TABLE_PLACE :
         (place == 'hand' ? HAND_PLACE : OUT_PLACE);
     for (var playerID in play) {
+        if (playerID == 'winner') {
+            continue;  // TODO play might have a 'winner' field
+        }
         var separation = place == 'table' ? BIG_SEP :
-            (myIndex == playerID ? MEDIUM_SEP : SMALL_SEP);
+            (cache.myIndex == playerID ? MEDIUM_SEP : SMALL_SEP);
         var cards = play[playerID];
         var arrow = new Arrow();
-        arrow.rotate(baseAngle * (myIndex - playerID));
+        arrow.rotate(cache.baseAngle * (cache.myIndex - playerID));
         arrow.translate(0, distance);
         arrow.scale(width / 2, height / 2);
 
@@ -225,7 +233,9 @@ function sendSelectedCardsMsg(command) {
     sendMsg(gameSocket, [command, cards.length].concat(cards));
 }
 
-function drawGame(status, game, cards) {
+function drawGame() {
+    var status = cache.status, game = cache.game;
+
     // update game control button
     if (!game.state || game.state == 'AWAITING_RESTART') {
         attachControl('new round', function() {
@@ -236,13 +246,23 @@ function drawGame(status, game, cards) {
             sendSelectedCardsMsg('SHOW');
         });
     } else if (game.state == 'AWAITING_KITTY') {
-        attachControl('make kitty', function() {
-            sendSelectedCardsMsg('MAKEKITTY');
-        });
+        if (cache.myIndex == game.master) {
+            attachControl('make kitty', function() {
+                sendSelectedCardsMsg('MAKEKITTY');
+            });
+        } else {
+            $('#gamecontrol').hide();
+        }
     } else if (game.state == 'AWAITING_PLAY') {
-        attachControl('play', function() {
-            sendSelectedCardsMsg('PLAY');
-        });
+        if (cache.myIndex == game.currPlayer) {
+            attachControl('play', function() {
+                sendSelectedCardsMsg('PLAY');
+            });
+        } else {
+            $('#gamecontrol').hide();
+        }
+    } else {
+        $('#gamecontrol').hide();
     }
 
     // draw game information
@@ -263,27 +283,38 @@ function drawGame(status, game, cards) {
             'GAME SCORES: ' + playerScores.join(', ') + '<br/>' +
             'ROUND SCORES: ' + roundScores.join(', ') + '<br/>'
             );
-    cache = {status: status, game: game, cards: cards};
     updateCardPositions();
 }
 
 function updateCardPositions() {
     var status = cache.status, game = cache.game;
-    var myIndex = $.inArray(username, game.players);
-    var baseAngle = 2 * Math.PI / game.players.length;
-    if (game.state == 'AWAITING_RESTART' && game.kitty) {
-        setCardsGoal(myIndex, 'table', game.kitty, baseAngle);
+    cardPlaces = {};
+    if (game.kitty) {
+        if (game.state == 'AWAITING_RESTART') {
+            setCardsGoal('table', game.kitty);
+        } else {
+            setCardsGoal('out', game.kitty);
+        }
     }
-    if ((game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') &&
-            game.shown) {
-                setCardsGoal(myIndex, 'table', game.shown, baseAngle);
+    if (game.shown) {
+        if (game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') {
+            setCardsGoal('table', game.shown);
+        } else {
+            setCardsGoal('out', game.shown);
+        }
+    }
+    if (game.hands) {
+        setCardsGoal('hand', game.hands);
+    }
+    if (game.currTrick) {
+        if (game.state == 'AWAITING_PLAY') {
+            if (showPrev) {
+                setCardsGoal('table', game.prevTrick);
+                setCardsGoal('out', game.currTrick);
+            } else {
+                setCardsGoal('table', game.currTrick);
+                setCardsGoal('out', game.prevTrick);
             }
-    if (game.state != 'AWAITING_RESTART' && game.hands) {
-        setCardsGoal(myIndex, 'hand', game.hands, baseAngle);
-    }
-    if (game.state == 'AWAITING_PLAY') {
-        if (showPrev && game.currTrick) {
-            setCardsGoal(myIndex, 'table', game.currTrick, baseAngle);
         }
     }
     drawCanvas();
@@ -298,8 +329,6 @@ function drawCanvas() {
     // prepare for drawing the canvas
     ctx.clearRect(-width / 2, -height / 2, width, height);
     var status = cache.status, game = cache.game, cards = cache.cards;
-    var myIndex = $.inArray(username, game.players);
-    var baseAngle = 2 * Math.PI / game.players.length;
 
     // draw player names
     ctx.save();
@@ -307,7 +336,7 @@ function drawCanvas() {
     ctx.fillStyle = 'white';
     for (var i = 0; i < game.players.length; i++) {
         var arrow = new Arrow();
-        arrow.rotate(baseAngle * (myIndex - i));
+        arrow.rotate(cache.baseAngle * (cache.myIndex - i));
         arrow.translate(0, 0.9);
         arrow.scale(width / 2, height / 2);
 
