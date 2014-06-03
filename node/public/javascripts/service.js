@@ -65,6 +65,7 @@ var cardPlaces = {};
 var selectedCards = {};
 var cardImages = {};
 var showPrev = false;
+var drawingCanvas = false;
 var cache;
 
 function setMainService(service, roomname) {
@@ -168,6 +169,7 @@ const BIG_SEP = 20;
 const MEDIUM_SEP = 15;
 const SMALL_SEP = 10;
 const SELECT_DIFF = 20;
+const CARD_JUMP = 0.7;
 
 function addCardSelectionListener(canvas) {
     canvas.onmousedown = function() { return false; };
@@ -186,8 +188,7 @@ function addCardSelectionListener(canvas) {
         for (var i = 0; i < hand.length; i++) {
             if (hand[i] in cardPlaces) {
                 var card = cardPlaces[hand[i]];
-                if (Math.abs(x - card.base.x) < imgWidth / 2 &&
-                    Math.abs(y - card.base.y) < imgHeight / 2 &&
+                if (inCard(x, y, card) &&
                     (!topCard || cardCompareFunction(card, topCard) > 0)) {
                         topCard = card;
                     }
@@ -202,13 +203,15 @@ function addCardSelectionListener(canvas) {
 
 function setCardsGoal(place, play) {
     var distance = place == 'table' ? TABLE_PLACE :
-        (place == 'hand' ? HAND_PLACE : OUT_PLACE);
+        (place == 'hand' ? HAND_PLACE :
+         (place == 'out' ? OUT_PLACE : 0));
     for (var playerID in play) {
         if (playerID == 'winner') {
             continue;  // TODO play might have a 'winner' field
         }
         var separation = place == 'table' ? BIG_SEP :
-            (cache.myIndex == playerID ? MEDIUM_SEP : SMALL_SEP);
+            (cache.myIndex != playerID ? SMALL_SEP :
+             (place == 'deck' ? 0 : MEDIUM_SEP));
         var cards = play[playerID];
         var arrow = new Arrow();
         arrow.rotate(cache.baseAngle * (cache.myIndex - playerID));
@@ -217,10 +220,14 @@ function setCardsGoal(place, play) {
 
         arrow.translate(-cards.length / 2 * separation, 0);
         for (var i = 0; i < cards.length; i++) {
-            cardPlaces[cards[i]] = jQuery.extend(true, {id: cards[i]}, arrow);
+            if (!(cards[i] in cardPlaces)) {
+                cardPlaces[cards[i]] = {id: cards[i]};
+            }
+            cardPlaces[cards[i]].goal =
+                jQuery.extend(true, {}, arrow);
             if (place == 'hand' && selectedCards[cards[i]]) {
                 // move selected cards slightly upwards
-                cardPlaces[cards[i]].base.y -= SELECT_DIFF;
+                cardPlaces[cards[i]].goal.base.y -= SELECT_DIFF;
             }
             arrow.translate(separation, 0);
         }
@@ -289,6 +296,11 @@ function drawGame() {
 
 function updateCardPositions() {
     var status = cache.status, game = cache.game;
+    if (game.deck) {
+        var deck = {};
+        deck[cache.myIndex] = game.deck;
+        setCardsGoal('deck', deck);
+    }
     if (game.kitty) {
         if (game.state == 'AWAITING_RESTART') {
             setCardsGoal('table', game.kitty);
@@ -317,16 +329,25 @@ function updateCardPositions() {
             }
         }
     }
-    drawCanvas();
+    if (!drawingCanvas) {
+        drawCanvas();
+    }
+}
+
+function inCard(x, y, card) {
+    return card.pos &&
+        Math.abs(x - card.pos.base.x) < imgWidth / 2 &&
+        Math.abs(y - card.pos.base.y) < imgHeight / 2;
 }
 
 function cardCompareFunction(card1, card2) {
-    return (2 * card1.base.x + card1.base.y) -
-        (2 * card2.base.x + card2.base.y);
+    return (2 * card1.pos.base.x + card1.pos.base.y) -
+        (2 * card2.pos.base.x + card2.pos.base.y);
 }
 
 function drawCanvas() {
     // prepare for drawing the canvas
+    drawingCanvas = false;
     ctx.clearRect(-width / 2, -height / 2, width, height);
     var status = cache.status, game = cache.game, cards = cache.cards;
 
@@ -348,24 +369,44 @@ function drawCanvas() {
     }
     ctx.restore();
 
-    // draw deck if cards remain
-    if (game.deck) {
-        ctx.drawImage(cardImages.BACK, -imgWidth / 2, -imgHeight / 2);
-    }
-
     // draw all the cards
     var cardList = new Array();
+    var redraw = false;
     for (var cardID in cardPlaces) {
-        cardList.push(cardPlaces[cardID]);
+        var card = cardPlaces[cardID];
+        if (card.pos) {
+            // move pos closer to goal
+            card.pos.base.x = CARD_JUMP * card.goal.base.x +
+                (1 - CARD_JUMP) * card.pos.base.x;
+            card.pos.base.y = CARD_JUMP * card.goal.base.y +
+                (1 - CARD_JUMP) * card.pos.base.y;
+            card.pos.dir = CARD_JUMP * card.goal.dir +
+                (1 - CARD_JUMP) * card.pos.dir;
+
+            // if not close enough, keep drawing
+            if (inCard(card.goal.base.x, card.goal.base.y, card)) {
+                card.pos = jQuery.extend({}, card.goal);
+            } else {
+                redraw = true;
+            }
+        } else {
+            card.pos = jQuery.extend({}, card.goal);
+        }
+        cardList.push(card);
     }
     cardList.sort(cardCompareFunction);
     for (var i = 0; i < cardList.length; i++) {
         ctx.save();
-        cardList[i].setContext(ctx);
+        cardList[i].pos.setContext(ctx);
         var card = cache.cards[cardList[i].id];
         var image = (card ?
                 cardImages[card.suit][card.value] : cardImages.BACK);
         ctx.drawImage(image, -imgWidth / 2, -imgHeight / 2);
         ctx.restore();
+    }
+    if (redraw) {
+        // some cards are not at their final position; keep drawing
+        drawingCanvas = true;
+        setTimeout(drawCanvas, 300);
     }
 }

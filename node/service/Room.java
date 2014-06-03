@@ -155,7 +155,7 @@ class Room
                 game.drawFromDeck(currentPlayerID);
                 sendState();
             }
-            else if (waitSteps++ > 80)  // wait for 8s for a show
+            else if (waitSteps++ > 20)  // wait for 8s for a show
             {
                 knownCards.get(game.getMaster().ID).addAll(game.getDeck());
                 game.takeKittyCards();
@@ -163,7 +163,7 @@ class Room
                 sendState();
             }
         }
-        }, 1000, 100);
+        }, 1000, 400);
     }
 
     Play parsePlay(User user, String[] data)
