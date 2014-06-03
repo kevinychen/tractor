@@ -160,8 +160,9 @@ function loadCardImages() {
     };
 }
 
-const TABLE_PLACE = 0.4;
-const HAND_PLACE = 0.7;
+const TABLE_PLACE = 0.38;
+const HAND_PLACE = 0.71;
+const NAME_PLACE = 0.93;
 const OUT_PLACE = 2.0;
 const BIG_SEP = 20;
 const MEDIUM_SEP = 15;
@@ -288,7 +289,6 @@ function drawGame() {
 
 function updateCardPositions() {
     var status = cache.status, game = cache.game;
-    cardPlaces = {};
     if (game.kitty) {
         if (game.state == 'AWAITING_RESTART') {
             setCardsGoal('table', game.kitty);
@@ -337,7 +337,7 @@ function drawCanvas() {
     for (var i = 0; i < game.players.length; i++) {
         var arrow = new Arrow();
         arrow.rotate(cache.baseAngle * (cache.myIndex - i));
-        arrow.translate(0, 0.9);
+        arrow.translate(0, NAME_PLACE);
         arrow.scale(width / 2, height / 2);
 
         ctx.save();
