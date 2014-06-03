@@ -1,22 +1,33 @@
 import java.util.*;
+import org.json.simple.*;
 import model.*;
+import view.NullView;
 
 class Room
 {
     final String roomname;
-    final List<User> members;
-    final GameProperties properties;
-    boolean gameStarted;
-    String status;
-    Game game;
 
-    Map<Integer, Card> cardMap;
-    Timer drawingCardsTimer;
+    final Map<String, User> members;
+    private int counter = 0;
+
+    private final GameProperties properties;
+    private boolean gameStarted;
+    private String status;
+    private Game game;
+
+    /* Map from card ID to card object */
+    private Map<Integer, Card> cardMap;
+
+    /* Map from player ID to known card IDs */
+    private Map<Integer, List<Card>> knownCards;
+
+    /* Timer for drawing the initial cards */
+    private Timer drawingCardsTimer;
 
     Room(String roomname)
     {
         this.roomname = roomname;
-        this.members = new ArrayList<User>();
+        this.members = new HashMap<String, User>();
         this.properties = new GameProperties();
         this.gameStarted = false;
         this.status = "awaiting players";
@@ -34,93 +45,307 @@ class Room
         return roomname.hashCode();
     }
 
-    String statusJSON()
+    synchronized void addUser(User user)
     {
-        List<String> usernames = new ArrayList<String>();
-        for (User user : members)
-            usernames.add("\"" + user.username + "\"");
-        return String.format("{" +
-                "\"roomname\": \"%s\", " +
-                "\"properties\": {" +
-                "\"numDecks\": %d, " +
-                "\"find_a_friend\": %b" +
-                "}, " +
-                "\"status\": \"%s\", " +
-                "\"members\": %s " +
-                "}",
-                roomname,
-                properties.numDecks,
-                properties.find_a_friend,
-                status,
-                usernames
-                );
+        if (members.containsKey(user.username))
+            user.playerID = members.remove(user.username).playerID;
+        members.put(user.username, user);
+        sendState();
     }
 
-    String gameJSON()
+    synchronized void removeUser(User user)
     {
         if (!gameStarted)
-            return "false";
-
-        if (game.getState() == Game.State.AWAITING_RESTART)
-            return String.format("{" +
-                    "\"state\": \"%s\", " +
-                    "\"trumpSuit\": \"%s\", " +
-                    "\"trumpVal\": \"%s\", " +
-                    "\"master\": %d, " +
-                    "\"gameScores\": %s" +
-                    "}",
-                    game.getState(),
-                    game.getTrumpSuit(),
-                    game.getTrumpValue(),
-                    game.getMaster().ID,
-                    mapToJSON(game.getPlayerScores())
-                    );
-
-        return String.format("{" +
-                "\"state\": \"%s\", " +
-                "\"deck\": %s, " +
-                "\"currTrick\": %s, " +
-                "\"prevTrick\": %s, " +
-                "\"hands\": %s, " +
-                "\"kitty\": %s, " +
-                "\"shown\": %s, " +
-                "\"master\": %d, " +
-                "\"trumpSuit\": \"%s\", " +
-                "\"trumpVal\": \"%s\", " +
-                "\"gameScores\": %s, " +
-                "\"roundScores\": %s, " +
-                "\"friendCards\": %s" +
-                "}",
-                game.getState(),
-                cardsToJSON(game.getDeck()),
-                trickToJSON(game.getCurrentTrick()),
-                trickToJSON(game.getPreviousTrick()),
-                handsToJSON(game),
-                playToJSON(game.getKitty()),
-                playToJSON(game.getShownCards()),
-                game.getMaster().ID,
-                game.getTrumpSuit(),
-                game.getTrumpValue(),
-                mapToJSON(game.getPlayerScores()),
-                mapToJSON(game.getTeamScores()),
-                friendCardsToJSON(game.getFriendCards())
-                );
+            members.remove(user.username);
+        sendState();
     }
 
-    String stateJSON()
+    synchronized void updateStatus(User user, String[] data)
     {
-        return String.format(
-                "{\"gameStarted\": %b, \"status\": %s, \"game\": %s}",
-                gameStarted, statusJSON(), gameJSON());
-    }
-
-    void parse(String[] data)
-    {
+        if (gameStarted)
+        {
+            sendError(user, "Game already started.");
+            return;
+        }
         properties.numDecks = Integer.parseInt(data[3]);
         properties.find_a_friend = Boolean.parseBoolean(data[4]);
+        sendState();
     }
 
-    String validateProperties()
+    synchronized void beginGame(User user)
+    {
+        if (gameStarted)
+        {
+            sendError(user, "Game already started.");
+            return;
+        }
+
+        String error = validateProperties();
+        if (error != null)
+        {
+            sendError(user, error);
+            return;
+        }
+
+        status = "beginning game...";
+        sendState();
+
+        gameStarted = true;
+        game = new Game(properties);
+        game.setView(new NullView("server"));
+
+        int ID = 0;
+        for (User u : members.values())
+        {
+            game.addPlayer(new Player(ID, u.username));
+            u.playerID = ID++;
+        }
+
+        status = "in-game";
+
+        new Thread()
+        {
+            public void run()
+            {
+                try
+                {
+                    Thread.sleep(3000);
+                }
+                catch (InterruptedException e) {}
+                synchronized(Room.this)
+                {
+                    sendState();
+                }
+            }
+        }.start();
+    }
+
+    void newRound(User user)
+    {
+        if (!gameStarted || game.getState() != Game.State.AWAITING_RESTART)
+        {
+            sendError(user, "Invalid command.");
+            return;
+        }
+
+        long randomSeed = System.currentTimeMillis();
+        game.startRound(randomSeed);
+
+        cardMap = new HashMap<Integer, Card>();
+        for (Card card : game.getDeck())
+            cardMap.put(card.ID, card);
+        knownCards = new HashMap<Integer, List<Card>>();
+        for (Player player : game.getPlayers())
+            knownCards.put(player.ID, new ArrayList<Card>());
+        knownCards.put(-1, game.getDeck());
+
+        drawingCardsTimer = new Timer();
+        drawingCardsTimer.schedule(new TimerTask()
+                {
+                    int waitSteps = 0;
+
+                    public void run()
+        {
+            int currentPlayerID = game.getCurrentPlayer().ID;
+            if (game.started() &&
+                game.canDrawFromDeck(currentPlayerID))
+            {
+                // send card info to the player drawing the card
+                knownCards.get(currentPlayerID).add(game.getDeck().getLast());
+                game.drawFromDeck(currentPlayerID);
+                sendState();
+            }
+            else if (waitSteps++ > 80)  // wait for 8s for a show
+            {
+                knownCards.get(game.getMaster().ID).addAll(game.getDeck());
+                game.takeKittyCards();
+                drawingCardsTimer.cancel();
+                sendState();
+            }
+        }
+        }, 1000, 100);
+    }
+
+    Play parsePlay(User user, String[] data)
+    {
+        int numCards = Integer.parseInt(data[1]);
+        if (numCards == 0)
+            return null;
+        List<Card> cards = new ArrayList<Card>();
+        for (int i = 0; i < numCards; i++)
+            cards.add(cardMap.get(Integer.parseInt(data[2 + i])));
+        return new Play(user.playerID, cards);
+    }
+
+    void showCards(User user, Play shown)
+    {
+        if (!gameStarted || !game.canShowCards(shown))
+        {
+            sendError(user, "Invalid command.");
+            return;
+        }
+        game.showCards(shown);
+        announceCards(shown.getCards());
+        sendState();
+    }
+
+    void makeKitty(User user, Play kitty)
+    {
+        if (!gameStarted || !game.canMakeKitty(kitty))
+        {
+            sendError(user, "Invalid command.");
+            return;
+        }
+        game.makeKitty(kitty);
+        sendState();
+    }
+
+    void play(User user, Play play)
+    {
+        if (!gameStarted || !game.canPlay(play))
+        {
+            sendError(user, "Invalid command.");
+            return;
+        }
+        if (game.isSpecialPlay(play))
+        {
+            Play filteredPlay = game.filterSpecialPlay(play);
+            if (filteredPlay != play)
+            {
+                JSONObject obj = new JSONObject();
+                obj.put("notification", "Invalid special play.");
+                send(user, JSONValue.toJSONString(obj));
+                play = filteredPlay;
+            }
+        }
+        game.play(play);
+        announceCards(play.getCards());
+        if (game.getState() == Game.State.AWAITING_RESTART)
+            announceCards(game.getKitty().getCards());
+        sendState();
+    }
+
+    JSONObject statusJSON()
+    {
+        JSONObject obj = new JSONObject();
+        obj.put("roomname", roomname);
+        JSONObject propertiesJ = new JSONObject();
+        propertiesJ.put("numDecks", properties.numDecks);
+        propertiesJ.put("find_a_friend", properties.find_a_friend);
+        obj.put("properties", propertiesJ);
+        obj.put("status", status);
+        JSONArray membersJ = new JSONArray();
+        for (String username : members.keySet())
+            membersJ.add(username);
+        obj.put("members", membersJ);
+        return obj;
+    }
+
+    private JSONObject gameJSON()
+    {
+        JSONObject obj = new JSONObject();
+        if (game != null)
+        {
+            obj.put("state", game.getState().toString());
+            JSONArray players = new JSONArray();
+            for (Player player : game.getPlayers())
+                players.add(player.name);
+            obj.put("players", players);
+            obj.put("trumpSuit", game.getTrumpSuit().toString());
+            obj.put("trumpVal", game.getTrumpValue().toString());
+            obj.put("master", game.getMaster().ID);
+            obj.put("gameScores", mapToJSON(game.getPlayerScores()));
+
+            if (game.getState() != Game.State.AWAITING_RESTART)
+            {
+                obj.put("deck", cardsToJSON(game.getDeck()));
+                obj.put("currTrick", trickToJSON(game.getCurrentTrick()));
+                obj.put("prevTrick", trickToJSON(game.getPreviousTrick()));
+                obj.put("kitty", playToJSON(game.getKitty()));
+                obj.put("shown", playToJSON(game.getShownCards()));
+                obj.put("roundScores", mapToJSON(game.getTeamScores()));
+                obj.put("friendCards", null);
+
+                JSONObject handsJ = new JSONObject();
+                for (Player player : game.getPlayers())
+                    handsJ.put(player.ID + "",
+                            cardsToJSON(game.getHand(player.ID).getCards()));
+                obj.put("hands", handsJ);
+            }
+        }
+        return obj;
+    }
+
+    private JSONObject knownCardsJSON(int playerID)
+    {
+        JSONObject knownCardsJ = new JSONObject();
+        if (knownCards != null)
+            for (Card card : knownCards.get(playerID))
+            {
+                JSONObject cardJ = new JSONObject();
+                cardJ.put("suit", card.suit.toString());
+                cardJ.put("value", card.value.toString());
+                knownCardsJ.put(card.ID, cardJ);
+            }
+        return knownCardsJ;
+    }
+
+    private JSONObject stateJSON(int playerID)
+    {
+        JSONObject obj = new JSONObject();
+        obj.put("gameStarted", gameStarted);
+        obj.put("status", statusJSON());
+        obj.put("game", gameJSON());
+        obj.put("cards", knownCardsJSON(playerID));
+        return obj;
+    }
+
+    private JSONArray cardsToJSON(List<Card> cards)
+    {
+        cards = new ArrayList<Card>(cards);
+        game.sortCards(cards);
+        JSONArray cardIDs = new JSONArray();
+        for (Card card : cards)
+            cardIDs.add(card.ID);
+        return cardIDs;
+    }
+
+    private JSONObject playToJSON(Play play)
+    {
+        JSONObject obj = new JSONObject();
+        if (play != null)
+            obj.put(play.getPlayerID() + "", cardsToJSON(play.getCards()));
+        return obj;
+    }
+
+    private JSONObject trickToJSON(Trick trick)
+    {
+        JSONObject obj = new JSONObject();
+        if (trick != null)
+        {
+            for (Play play : trick.getPlays())
+                obj.putAll(playToJSON(play));
+            if (trick.getWinningPlay() != null)
+                obj.put("winner", trick.getWinningPlay().getPlayerID());
+        }
+        return obj;
+    }
+
+    private <K, V> JSONObject mapToJSON(Map<K, V> map)
+    {
+        JSONObject obj = new JSONObject();
+        for (Map.Entry<K, V> entry : map.entrySet())
+            obj.put(entry.getKey() + "", entry.getValue() + "");
+        return obj;
+    }
+
+    private void announceCards(List<Card> cards)
+    {
+        for (Player player : game.getPlayers())
+            knownCards.get(player.ID).addAll(cards);
+    }
+
+    private String validateProperties()
     {
         if (properties.find_a_friend)
         {
@@ -134,74 +359,22 @@ class Room
         }
     }
 
-    String cardToJSON(Card card)
+    private void send(User user, String s)
     {
-        return String.format(
-                "{\"id\": %d, \"suit\": \"%s\", \"value\": \"%s\"}",
-                card.ID, card.suit, card.value);
+        if (user.socket.isOpen())
+            user.socket.send(s);
     }
 
-    String cardsToJSON(List<Card> cards)
+    private void sendError(User user, String s)
     {
-        game.sortCards(cards);
-        List<Integer> ids = new ArrayList<Integer>();
-        for (Card card : cards)
-            ids.add(card.ID);
-        return ids.toString();
+        JSONObject obj = new JSONObject();
+        obj.put("error", s);
+        send(user, obj.toString());
     }
 
-    String handsToJSON(Game game)
+    private void sendState()
     {
-        Map<String, String> json = new HashMap<String, String>();
-        for (Player player : game.getPlayers())
-            json.put("\"" + player.ID + "\"",
-                    cardsToJSON(game.getHand(player.ID).getCards()));
-        return json.toString().replace('=', ':');
-    }
-
-    String playToJSON(Play play)
-    {
-        if (play == null)
-            return "false";
-
-        Map<String, String> json = new HashMap<String, String>();
-        json.put("\"" + play.getPlayerID() + "\"",
-                cardsToJSON(play.getCards()));
-        return json.toString().replace('=', ':');
-    }
-
-    String trickToJSON(Trick trick)
-    {
-        if (trick == null)
-            return "false";
-
-        Map<String, String> json = new HashMap<String, String>();
-        for (Play play : trick.getPlays())
-            json.put("\"" + play.getPlayerID() + "\"",
-                    cardsToJSON(play.getCards()));
-        if (trick.getWinningPlay() != null)
-            json.put("\"winner\"",
-                    trick.getWinningPlay().getPlayerID() + "");
-        return json.toString().replace('=', ':');
-    }
-
-    String friendCardsToJSON(FriendCards friendCards)
-    {
-        if (friendCards == null)
-            return "false";
-
-        Map<String, Integer> json = new HashMap<String, Integer>();
-        for (Map.Entry<Card, Integer> entry : friendCards.getFriendCards().entrySet())
-            json.put("\"" + entry.getKey().ID + "\"", entry.getValue());
-        return json.toString().replace('=', ':');
-    }
-
-    <K, V> String mapToJSON(Map<K, V> map)
-    {
-        Map<String, String> json = new HashMap<String, String>();
-        for (Map.Entry<K, V> entry : map.entrySet())
-            json.put("\"" + entry.getKey() + "\"",
-                   entry.getValue().toString());
-        return json.toString().replace('=', ':');
+        for (User user : members.values())
+            send(user, stateJSON(user.playerID).toString());
     }
 }

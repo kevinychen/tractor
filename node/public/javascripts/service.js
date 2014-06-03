@@ -27,11 +27,6 @@ function sendMsg(conn, arr) {
     conn.send(arr.join('__'));
 }
 
-function sendConv(command, args) {
-    // convenience method
-    sendMsg(gameSocket, [command, roomname, username].concat(args));
-}
-
 function queryRoomStatus(roomname, service, callback) {
     var ws = new WebSocket('ws://' + service);
     if (ws.readyState > 1) {  // CLOSED or CLOSING
@@ -47,14 +42,15 @@ function queryRoomStatus(roomname, service, callback) {
 }
 
 function declareStatus(roomname) {
-    sendConv('STATUS', [
+    sendMsg(gameSocket, [
+            'STATUS',
             $('#gamestatusnumdecks').val(),
             $('#gamestatusfindafriend').prop('checked')
             ]);
 }
 
 function declareBeginGame(roomname) {
-    sendConv('BEGINGAME', []);
+    sendMsg(gameSocket, ['BEGINGAME']);
 }
 
 function attachControl(label, func) {
@@ -64,9 +60,9 @@ function attachControl(label, func) {
 }
 
 var gameSocket;
-var cardValues = new Object();
-var selectedCards = new Object();
-var cardImages = new Object();
+var cardPlaces = {};
+var selectedCards = {};
+var cardImages = {};
 var showPrev = false;
 var cache;
 
@@ -95,7 +91,7 @@ function setMainService(service, roomname) {
     });
 
     gameSocket.onopen = function() {
-        sendConv('HELLO', []);
+        sendMsg(gameSocket, ['HELLO', roomname, username]);
     };
     gameSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);
@@ -105,15 +101,12 @@ function setMainService(service, roomname) {
         if (data.notification) {
             showMsg($('#roomnotification'), data.notification);
         }
-        if (data.card) {
-            cardValues[data.card.id] = data.card;
-        }
         if (data.gameStarted) {
             $('#gameintro').hide();
             if ($('#gamecanvas').is(':hidden')) {
                 $('#gamecanvas').slideDown();
             }
-            drawGame(data.status, data.game);
+            drawGame(data.status, data.game, data.cards);
         } else if (data.status) {
             $('#gameintro').show();
             $('#gamecanvas').hide();
@@ -141,14 +134,14 @@ function loadCardImages() {
         SIX: '6', SEVEN: '7', EIGHT: '8', NINE: '9', TEN: '10',
         JACK: 'j', QUEEN: 'q', KING: 'k', ACE: '1'};
     for (var suitName in suits) {
-        cardImages[suitName] = new Object();
+        cardImages[suitName] = {};
         for (var valueName in values) {
             cardImages[suitName][valueName] = new Image();
             cardImages[suitName][valueName].src =
                 '/images/cards/' + suits[suitName] + values[valueName] + '.gif';
         }
     }
-    cardImages.TRUMP = new Object();
+    cardImages.TRUMP = {};
     cardImages.TRUMP.SMALL_JOKER = new Image();
     cardImages.TRUMP.SMALL_JOKER.src = '/images/cards/jb.gif';
     cardImages.TRUMP.BIG_JOKER = new Image();
@@ -172,21 +165,23 @@ const SELECT_DIFF = 20;
 function addCardSelectionListener(canvas) {
     canvas.onmousedown = function() { return false; };
     canvas.addEventListener('mousedown', function(e) {
-        if (!cache.cards) {
-            return;
-        }
         var rect = canvas.getBoundingClientRect();
         var x = e.clientX - rect.left - width / 2;
         var y = e.clientY - rect.top - height / 2;
-        var myIndex = $.inArray(username, cache.status.members);
+        if (!cache.game || !cache.game.hands) {
+            return;
+        }
+        var myIndex = $.inArray(username, cache.game.players);
         var hand = cache.game.hands[myIndex];
+        if (!hand) {
+            return;
+        }
         var topCard = null;
         for (var i = 0; i < hand.length; i++) {
-            if (hand[i] in cardValues) {
-                var card = cardValues[hand[i]];
-                if (card.goal &&
-                    Math.abs(x - card.goal.base.x) < imgWidth / 2 &&
-                    Math.abs(y - card.goal.base.y) < imgHeight / 2 &&
+            if (hand[i] in cardPlaces) {
+                var card = cardPlaces[hand[i]];
+                if (Math.abs(x - card.base.x) < imgWidth / 2 &&
+                    Math.abs(y - card.base.y) < imgHeight / 2 &&
                     (!topCard || cardCompareFunction(card, topCard) > 0)) {
                         topCard = card;
                     }
@@ -200,8 +195,6 @@ function addCardSelectionListener(canvas) {
 }
 
 function setCardsGoal(myIndex, place, play, baseAngle) {
-    // myIndex: index of myself in the status.members array
-    // place: 'table', 'hand', 'out'
     var distance = place == 'table' ? TABLE_PLACE :
         (place == 'hand' ? HAND_PLACE : OUT_PLACE);
     for (var playerID in play) {
@@ -215,39 +208,40 @@ function setCardsGoal(myIndex, place, play, baseAngle) {
 
         arrow.translate(-cards.length / 2 * separation, 0);
         for (var i = 0; i < cards.length; i++) {
-            if (!(cards[i] in cardValues)) {
-                cardValues[cards[i]] = {id: cards[i]};
-            }
-            cardValues[cards[i]].goal = jQuery.extend(true, {}, arrow);
+            cardPlaces[cards[i]] = jQuery.extend(true, {id: cards[i]}, arrow);
             if (place == 'hand' && selectedCards[cards[i]]) {
                 // move selected cards slightly upwards
-                cardValues[cards[i]].goal.base.y -= SELECT_DIFF;
+                cardPlaces[cards[i]].base.y -= SELECT_DIFF;
             }
             arrow.translate(separation, 0);
         }
     }
 }
 
-function drawGame(status, game) {
+function sendSelectedCardsMsg(command) {
+    var cards = Object.keys(selectedCards);
+    selectedCards = {};
+    updateCardPositions();
+    sendMsg(gameSocket, [command, cards.length].concat(cards));
+}
+
+function drawGame(status, game, cards) {
     // update game control button
     if (!game.state || game.state == 'AWAITING_RESTART') {
         attachControl('new round', function() {
-            sendConv('NEWROUND', []);
+            sendMsg(gameSocket, ['NEWROUND']);
         });
     } else if (game.state == 'AWAITING_SHOW') {
         attachControl('show', function() {
-            var cards = Object.keys(selectedCards);
-            sendConv('SHOW', [cards.length] + cards);
+            sendSelectedCardsMsg('SHOW');
         });
     } else if (game.state == 'AWAITING_KITTY') {
         attachControl('make kitty', function() {
-            var cards = Object.keys(selectedCards);
-            sendConv('MAKEKITTY', [cards.length] + cards);
+            sendSelectedCardsMsg('MAKEKITTY');
         });
     } else if (game.state == 'AWAITING_PLAY') {
         attachControl('play', function() {
-            var cards = Object.keys(selectedCards);
-            sendConv('PLAY', [cards.length] + cards);
+            sendSelectedCardsMsg('PLAY');
         });
     }
 
@@ -257,7 +251,7 @@ function drawGame(status, game) {
     var playerScores = [];
     for (var playerID in game.gameScores) {
         playerScores.push(
-                status.members[playerID] + ': ' + game.gameScores[playerID]);
+                game.players[playerID] + ': ' + game.gameScores[playerID]);
     }
     var roundScores = [];
     for (var team in game.roundScores) {
@@ -269,14 +263,14 @@ function drawGame(status, game) {
             'GAME SCORES: ' + playerScores.join(', ') + '<br/>' +
             'ROUND SCORES: ' + roundScores.join(', ') + '<br/>'
             );
-    cache = {status: status, game: game};
+    cache = {status: status, game: game, cards: cards};
     updateCardPositions();
 }
 
 function updateCardPositions() {
     var status = cache.status, game = cache.game;
-    var myIndex = $.inArray(username, status.members);
-    var baseAngle = 2 * Math.PI / status.members.length;
+    var myIndex = $.inArray(username, game.players);
+    var baseAngle = 2 * Math.PI / game.players.length;
     if (game.state == 'AWAITING_RESTART' && game.kitty) {
         setCardsGoal(myIndex, 'table', game.kitty, baseAngle);
     }
@@ -296,22 +290,22 @@ function updateCardPositions() {
 }
 
 function cardCompareFunction(card1, card2) {
-    return (2 * card1.goal.base.x + card1.goal.base.y) -
-        (2 * card2.goal.base.x + card2.goal.base.y);
+    return (2 * card1.base.x + card1.base.y) -
+        (2 * card2.base.x + card2.base.y);
 }
 
 function drawCanvas() {
     // prepare for drawing the canvas
     ctx.clearRect(-width / 2, -height / 2, width, height);
-    var status = cache.status, game = cache.game;
-    var myIndex = $.inArray(username, status.members);
-    var baseAngle = 2 * Math.PI / status.members.length;
+    var status = cache.status, game = cache.game, cards = cache.cards;
+    var myIndex = $.inArray(username, game.players);
+    var baseAngle = 2 * Math.PI / game.players.length;
 
     // draw player names
     ctx.save();
     ctx.font = '18px Arial';
     ctx.fillStyle = 'white';
-    for (var i = 0; i < status.members.length; i++) {
+    for (var i = 0; i < game.players.length; i++) {
         var arrow = new Arrow();
         arrow.rotate(baseAngle * (myIndex - i));
         arrow.translate(0, 0.9);
@@ -319,8 +313,8 @@ function drawCanvas() {
 
         ctx.save();
         arrow.setContext(ctx);
-        var strWidth = ctx.measureText(status.members[i]).width;
-        ctx.fillText(status.members[i], -strWidth / 2, 0);
+        var strWidth = ctx.measureText(game.players[i]).width;
+        ctx.fillText(game.players[i], -strWidth / 2, 0);
         ctx.restore();
     }
     ctx.restore();
@@ -331,16 +325,16 @@ function drawCanvas() {
     }
 
     // draw all the cards
-    cache.cards = new Array();
-    for (var cardID in cardValues) {
-        cache.cards.push(cardValues[cardID]);
+    var cardList = new Array();
+    for (var cardID in cardPlaces) {
+        cardList.push(cardPlaces[cardID]);
     }
-    cache.cards.sort(cardCompareFunction);
-    for (var i = 0; i < cache.cards.length; i++) {
-        var card = cache.cards[i];
+    cardList.sort(cardCompareFunction);
+    for (var i = 0; i < cardList.length; i++) {
         ctx.save();
-        card.goal.setContext(ctx);
-        var image = (card.suit && card.value ?
+        cardList[i].setContext(ctx);
+        var card = cache.cards[cardList[i].id];
+        var image = (card ?
                 cardImages[card.suit][card.value] : cardImages.BACK);
         ctx.drawImage(image, -imgWidth / 2, -imgHeight / 2);
         ctx.restore();

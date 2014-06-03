@@ -5,6 +5,7 @@ class User
     final String username;
     Room room;
     WebSocket socket;
+    int playerID;
 
     User(String username)
     {
