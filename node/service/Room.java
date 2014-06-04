@@ -67,8 +67,8 @@ class Room
             sendError(user, "Game already started.");
             return;
         }
-        properties.numDecks = Integer.parseInt(data[3]);
-        properties.find_a_friend = Boolean.parseBoolean(data[4]);
+        properties.numDecks = Integer.parseInt(data[1]);
+        properties.find_a_friend = Boolean.parseBoolean(data[2]);
         sendState();
     }
 
@@ -140,6 +140,8 @@ class Room
         knownCards.put(-1, game.getDeck());
 
         drawingCardsTimer = new Timer();
+        final int DELAY_MILLIS = 200;
+        final int KITTY_DELAY = 8000;
         drawingCardsTimer.schedule(new TimerTask()
                 {
                     int waitSteps = 0;
@@ -155,7 +157,7 @@ class Room
                 game.drawFromDeck(currentPlayerID);
                 sendState();
             }
-            else if (waitSteps++ > 20)  // wait for 8s for a show
+            else if (waitSteps++ > KITTY_DELAY / DELAY_MILLIS)
             {
                 knownCards.get(game.getMaster().ID).addAll(game.getDeck());
                 game.takeKittyCards();
@@ -163,7 +165,7 @@ class Room
                 sendState();
             }
         }
-        }, 1000, 400);
+        }, 1000, DELAY_MILLIS);
     }
 
     Play parsePlay(User user, String[] data)
@@ -207,6 +209,7 @@ class Room
             sendError(user, "Invalid command.");
             return;
         }
+        announceCards(play.getCards());
         if (game.isSpecialPlay(play))
         {
             Play filteredPlay = game.filterSpecialPlay(play);
@@ -219,7 +222,6 @@ class Room
             }
         }
         game.play(play);
-        announceCards(play.getCards());
         if (game.getState() == Game.State.AWAITING_RESTART)
             announceCards(game.getKitty().getCards());
         sendState();
@@ -261,7 +263,8 @@ class Room
                 obj.put("currPlayer", game.getCurrentPlayer().ID);
                 obj.put("deck", cardsToJSON(game.getDeck()));
                 obj.put("currTrick", trickToJSON(game.getCurrentTrick()));
-                obj.put("prevTrick", trickToJSON(game.getPreviousTrick()));
+                obj.put("prevTrick", trickToJSON(game.getPreviousTrick(1)));
+                obj.put("goneTrick", trickToJSON(game.getPreviousTrick(2)));
                 obj.put("kitty", playToJSON(game.getKitty()));
                 obj.put("shown", playToJSON(game.getShownCards()));
                 obj.put("roundScores", mapToJSON(game.getTeamScores()));
@@ -272,6 +275,9 @@ class Room
                     handsJ.put(player.ID + "",
                             cardsToJSON(game.getHand(player.ID).getCards()));
                 obj.put("hands", handsJ);
+
+                if (game.getCurrentTrick().getPlays().isEmpty())
+                    obj.put("endTrick", true);
             }
         }
         return obj;

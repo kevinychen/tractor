@@ -161,15 +161,16 @@ function loadCardImages() {
     };
 }
 
-const TABLE_PLACE = 0.38;
+const TABLE_PLACE = 0.36;
 const HAND_PLACE = 0.71;
-const NAME_PLACE = 0.93;
-const OUT_PLACE = 2.0;
+const NAME_PLACE = 0.95;
+const OUT_PLACE = 1.6;
 const BIG_SEP = 20;
 const MEDIUM_SEP = 15;
 const SMALL_SEP = 10;
 const SELECT_DIFF = 20;
-const CARD_JUMP = 0.7;
+const CARD_JUMP = 0.5;
+const END_TRICK_WAIT = 1000;
 
 function addCardSelectionListener(canvas) {
     canvas.onmousedown = function() { return false; };
@@ -177,6 +178,11 @@ function addCardSelectionListener(canvas) {
         var rect = canvas.getBoundingClientRect();
         var x = e.clientX - rect.left - width / 2;
         var y = e.clientY - rect.top - height / 2;
+        if (onShowPrev(x, y)) {
+            showPrev = true;
+            updateCardPositions();
+            return;
+        }
         if (!cache.game || !cache.game.hands) {
             return;
         }
@@ -195,13 +201,23 @@ function addCardSelectionListener(canvas) {
             }
         }
         if (topCard) {
-            selectedCards[topCard.id] ^= 1;
+            if (topCard.id in selectedCards) {
+                delete selectedCards[topCard.id];
+            } else {
+                selectedCards[topCard.id] = true;
+            }
+            updateCardPositions();
+        }
+    });
+    canvas.addEventListener('mouseup', function(e) {
+        if (showPrev) {
+            showPrev = false;
             updateCardPositions();
         }
     });
 }
 
-function setCardsGoal(place, play) {
+function setCardsGoal(place, play, setWinner) {
     var distance = place == 'table' ? TABLE_PLACE :
         (place == 'hand' ? HAND_PLACE :
          (place == 'out' ? OUT_PLACE : 0));
@@ -210,11 +226,12 @@ function setCardsGoal(place, play) {
             continue;  // TODO play might have a 'winner' field
         }
         var separation = place == 'table' ? BIG_SEP :
-            (cache.myIndex != playerID ? SMALL_SEP :
+            (cache.myIndex != playerID && cache.myIndex != -1 ? SMALL_SEP :
              (place == 'deck' ? 0 : MEDIUM_SEP));
         var cards = play[playerID];
         var arrow = new Arrow();
-        arrow.rotate(cache.baseAngle * (cache.myIndex - playerID));
+        arrow.rotate(cache.baseAngle *
+                (cache.myIndex - (setWinner ? play.winner : playerID)));
         arrow.translate(0, distance);
         arrow.scale(width / 2, height / 2);
 
@@ -274,8 +291,8 @@ function drawGame() {
     }
 
     // draw game information
-    var trump = game.trumpValue ?
-        game.trumpValue + ', ' + game.trumpSuit : 'undeclared';
+    var trump = game.trumpVal ?
+        game.trumpVal + ', ' + game.trumpSuit : 'undeclared';
     var playerScores = [];
     for (var playerID in game.gameScores) {
         playerScores.push(
@@ -291,6 +308,15 @@ function drawGame() {
             'GAME SCORES: ' + playerScores.join(', ') + '<br/>' +
             'ROUND SCORES: ' + roundScores.join(', ') + '<br/>'
             );
+
+    // draw cards, etc.
+    if (game.endTrick) {
+        showPrev = true;
+        setTimeout(function() {
+            showPrev = false;
+            updateCardPositions();
+        }, END_TRICK_WAIT);
+    }
     updateCardPositions();
 }
 
@@ -311,8 +337,6 @@ function updateCardPositions() {
     if (game.shown) {
         if (game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') {
             setCardsGoal('table', game.shown);
-        } else {
-            setCardsGoal('out', game.shown);
         }
     }
     if (game.hands) {
@@ -322,11 +346,12 @@ function updateCardPositions() {
         if (game.state == 'AWAITING_PLAY') {
             if (showPrev) {
                 setCardsGoal('table', game.prevTrick);
-                setCardsGoal('out', game.currTrick);
+                setCardsGoal('out', game.currTrick, true);
             } else {
                 setCardsGoal('table', game.currTrick);
-                setCardsGoal('out', game.prevTrick);
+                setCardsGoal('out', game.prevTrick, true);
             }
+            setCardsGoal('out', game.goneTrick, true);
         }
     }
     if (!drawingCanvas) {
@@ -338,6 +363,15 @@ function inCard(x, y, card) {
     return card.pos &&
         Math.abs(x - card.pos.base.x) < imgWidth / 2 &&
         Math.abs(y - card.pos.base.y) < imgHeight / 2;
+}
+
+function closeToCard(x, y, card) {
+    return card.pos &&
+        Math.abs(x - card.pos.base.x) + Math.abs(y - card.pos.base.y) < 10;
+}
+
+function onShowPrev(x, y) {
+    return Math.abs(x) + Math.abs(y) < 40;
 }
 
 function cardCompareFunction(card1, card2) {
@@ -369,6 +403,17 @@ function drawCanvas() {
     }
     ctx.restore();
 
+    // draw show prev button
+    if (game.state == 'AWAITING_PLAY') {
+        ctx.save();
+        ctx.font = '12px Arial';
+        ctx.fillStyle = 'white';
+        var showPrevText = 'SHOW PREV';
+        var strWidth = ctx.measureText(showPrevText).width;
+        ctx.fillText(showPrevText, -strWidth / 2, 0);
+        ctx.restore();
+    }
+
     // draw all the cards
     var cardList = new Array();
     var redraw = false;
@@ -384,7 +429,7 @@ function drawCanvas() {
                 (1 - CARD_JUMP) * card.pos.dir;
 
             // if not close enough, keep drawing
-            if (inCard(card.goal.base.x, card.goal.base.y, card)) {
+            if (closeToCard(card.goal.base.x, card.goal.base.y, card)) {
                 card.pos = jQuery.extend({}, card.goal);
             } else {
                 redraw = true;
@@ -407,6 +452,6 @@ function drawCanvas() {
     if (redraw) {
         // some cards are not at their final position; keep drawing
         drawingCanvas = true;
-        setTimeout(drawCanvas, 300);
+        setTimeout(drawCanvas, 50);
     }
 }

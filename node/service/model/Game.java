@@ -407,9 +407,10 @@ public class Game implements Serializable
         return tricks.get(tricks.size() - 1);
     }
 
-    public Trick getPreviousTrick()
+    public Trick getPreviousTrick(int steps)
     {
-        return tricks.size() == 1 ? new Trick() : tricks.get(tricks.size() - 2);
+        return tricks.size() <= steps ? new Trick() :
+            tricks.get(tricks.size() - steps - 1);
     }
 
     public boolean canPlay(Play play)
@@ -594,7 +595,7 @@ public class Game implements Serializable
 
         /* Add points from kitty, doubled */
         update(currentScores,
-                getPreviousTrick().getWinningPlay().getPlayerID(),
+                getPreviousTrick(1).getWinningPlay().getPlayerID(),
                 2 * kitty.numPoints());
 
         updateScores();
