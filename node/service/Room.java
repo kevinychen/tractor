@@ -256,7 +256,7 @@ class Room
             obj.put("trumpSuit", game.getTrumpSuit().toString());
             obj.put("trumpVal", game.getTrumpValue().toString());
             obj.put("master", game.getMaster().ID);
-            obj.put("gameScores", mapToJSON(game.getPlayerScores()));
+            obj.put("gameScores", gameScoresToJSON(game.getPlayerScores()));
 
             if (game.getState() != Game.State.AWAITING_RESTART)
             {
@@ -335,6 +335,15 @@ class Room
             if (trick.getWinningPlay() != null)
                 obj.put("winner", trick.getWinningPlay().getPlayerID());
         }
+        return obj;
+    }
+
+    private JSONObject gameScoresToJSON(Map<Integer, Integer> scores)
+    {
+        JSONObject obj = new JSONObject();
+        for (Map.Entry<Integer, Integer> entry : scores.entrySet())
+            obj.put(entry.getKey() + "",
+                    Card.VALUE.values()[entry.getValue()].toString());
         return obj;
     }
 

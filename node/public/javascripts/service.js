@@ -2,7 +2,7 @@
 var gameSocket;
 var ctx;
 var width, height;
-var imgWidth, imgHeight;
+var imgWidth = 0, imgHeight = 0;
 
 $(document).ready(function() {
     var canvas = $('#gameshow')[0];
@@ -343,10 +343,10 @@ function updateCardPositions() {
         setCardsGoal('hand', game.hands);
     }
     if (game.currTrick) {
-        if (game.state == 'AWAITING_PLAY') {
+        if (game.state == 'AWAITING_PLAY' || game.state == 'AWAITING_RESTART') {
             if (showPrev) {
                 setCardsGoal('table', game.prevTrick);
-                setCardsGoal('out', game.currTrick, true);
+                setCardsGoal('out', game.currTrick);
             } else {
                 setCardsGoal('table', game.currTrick);
                 setCardsGoal('out', game.prevTrick, true);
@@ -380,6 +380,12 @@ function cardCompareFunction(card1, card2) {
 }
 
 function drawCanvas() {
+    // if images have not loaded, wait
+    if (!imgWidth) {
+        setTimeout(drawCanvas, 1000);
+        return;
+    }
+
     // prepare for drawing the canvas
     drawingCanvas = false;
     ctx.clearRect(-width / 2, -height / 2, width, height);

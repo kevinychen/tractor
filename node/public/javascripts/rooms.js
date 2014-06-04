@@ -65,6 +65,7 @@ function joinRoom(room, callback) {
 }
 
 function leaveRoom() {
+    roomname = '';
     $('#main').slideUp();
     $.post('/leave');
     endMainService();
@@ -130,10 +131,10 @@ function queryRoomsList() {
                         html += 'Members: ' + status.members.join() + '<br/>';
                         html += 'Num people: ' + status.members.length + '<br/>';
                         html += 'Status: ' + status.status + '<br/>';
-                        if ($.inArray(username, status.members) == -1) {
-                            html += '<span id="room' + i + 'join" class="blue button">join</span>';
-                        } else {
+                        if (roomname == status.roomname) {
                             html += '<span id="room' + i + 'leave" class="cancel button">leave</span>';
+                        } else {
+                            html += '<span id="room' + i + 'join" class="blue button">join</span>';
                         }
                         $('#room' + i + 'info').html(html);
                         $('#room' + i + 'join').on('click', function() {
