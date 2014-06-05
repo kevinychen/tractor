@@ -46,7 +46,8 @@ function declareStatus(roomname) {
             'STATUS',
             $('#gamestatusnumdecks').val(),
             $('#gamestatusfindafriend').prop('checked')
-            ]);
+            ].concat(playerOrdering)
+            );
 }
 
 function declareBeginGame(roomname) {
@@ -61,6 +62,7 @@ function attachControl(label, func) {
 }
 
 var gameSocket;
+var players, playerOrdering;
 var cardPlaces;
 var selectedCards;
 var cardImages = {};
@@ -81,12 +83,38 @@ function setMainService(service, roomname) {
     html += 'Find a friend: <input id="gamestatusfindafriend" type="checkbox" /><br/>';
     html += 'Game status: <span id="gamestatusstatus"></span><br/>';
     html += '<ul id="gamestatusplayers"></ul>';
+    html += '<button id="gamestatusmoveup" type="button">&#x25B2</button>';
+    html += '<button id="gamestatusmovedown" type="button">&#x25BC</button>';
     $('#gameintro').html(html);
     $('#gamestatusnumdecks').bind('input', function() {
         declareStatus(roomname);
     });
     $('#gamestatusfindafriend').click('change', function() {
         declareStatus(roomname);
+    });
+    $('#gamestatusmoveup').on('click', function() {
+        var player = $('input:radio[name=player]:checked').val();
+        if (player) {
+            var index = players.indexOf(player);
+            var where = playerOrdering.indexOf(index);
+            if (where != -1 && where != 0) {
+                playerOrdering[where] = playerOrdering[where - 1];
+                playerOrdering[where - 1] = index;
+            }
+            declareStatus(roomname);
+        }
+    });
+    $('#gamestatusmovedown').on('click', function() {
+        var player = $('input:radio[name=player]:checked').val();
+        if (player) {
+            var index = players.indexOf(player);
+            var where = playerOrdering.indexOf(index);
+            if (where != -1 && where != players.length - 1) {
+                playerOrdering[where] = playerOrdering[where + 1];
+                playerOrdering[where + 1] = index;
+            }
+            declareStatus(roomname);
+        }
     });
     attachControl('begin game', function() {
         declareBeginGame(roomname);
@@ -124,11 +152,18 @@ function setMainService(service, roomname) {
             $('#gamestatusnumdecks').val(data.status.properties.numDecks);
             $('#gamestatusfindafriend').prop('checked', data.status.properties.find_a_friend);
             $('#gamestatusstatus').text(data.status.status);
+            players = data.status.members;
+            playerOrdering = data.status.playerOrdering;
             var playerList = '';
-            for (var i = 0; i < data.status.members.length; i++) {
-                playerList += '<li>Player ' + (i + 1) + ': ' + data.status.members[i] + '</li>';
+            for (var i = 0; i < players.length; i++) {
+                playerList += '<li>' + (i + 1) + ': ';
+                playerList += players[playerOrdering[i]];
+                playerList += '<input type="radio" name="player" value="' +
+                   players[playerOrdering[i]] + '" />';
             }
+            var prevChosen = $('input:radio[name=player]:checked').val();
             $('#gamestatusplayers').html(playerList);
+            $('input:radio[name=player][value=' + prevChosen + ']').attr('checked', true);
         }
     };
 }

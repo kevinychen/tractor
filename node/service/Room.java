@@ -8,6 +8,7 @@ class Room
     final String roomname;
 
     final Map<String, User> members;
+    private List<Integer> playerOrdering;
     private int counter = 0;
 
     private final GameProperties properties;
@@ -27,7 +28,8 @@ class Room
     Room(String roomname)
     {
         this.roomname = roomname;
-        this.members = new HashMap<String, User>();
+        this.members = new TreeMap<String, User>();
+        this.playerOrdering = new ArrayList<Integer>();
         this.properties = new GameProperties();
         this.gameStarted = false;
         this.status = "awaiting players";
@@ -49,6 +51,8 @@ class Room
     {
         if (members.containsKey(user.username))
             user.playerID = members.remove(user.username).playerID;
+        else
+            playerOrdering.add(members.size());
         members.put(user.username, user);
         sendState();
     }
@@ -56,7 +60,10 @@ class Room
     synchronized void removeUser(User user)
     {
         if (!gameStarted)
+        {
             members.remove(user.username);
+            playerOrdering.remove(members.size());
+        }
         sendState();
     }
 
@@ -69,6 +76,14 @@ class Room
         }
         properties.numDecks = Integer.parseInt(data[1]);
         properties.find_a_friend = Boolean.parseBoolean(data[2]);
+
+        List<Integer> playerOrderingCandidate = new ArrayList<Integer>();
+        for (int i = 0; i < members.size(); i++)
+            playerOrderingCandidate.add(Integer.parseInt(data[3 + i]));
+        Set<Integer> set = new HashSet<Integer>(playerOrderingCandidate);
+        if (set.size() == members.size())
+            playerOrdering = playerOrderingCandidate;
+
         sendState();
     }
 
@@ -95,8 +110,10 @@ class Room
         game.setView(new NullView("server"));
 
         int ID = 0;
-        for (User u : members.values())
+        List<User> candidates = new ArrayList<User>(members.values());
+        for (int i = 0; i < members.size(); i++)
         {
+            User u = candidates.get(playerOrdering.get(i));
             game.addPlayer(new Player(ID, u.username));
             u.playerID = ID++;
         }
@@ -240,6 +257,10 @@ class Room
         for (String username : members.keySet())
             membersJ.add(username);
         obj.put("members", membersJ);
+        JSONArray orderingJ = new JSONArray();
+        for (int ordering : playerOrdering)
+            orderingJ.add(ordering);
+        obj.put("playerOrdering", orderingJ);
         return obj;
     }
 
