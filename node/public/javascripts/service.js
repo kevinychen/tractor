@@ -61,8 +61,8 @@ function attachControl(label, func) {
 }
 
 var gameSocket;
-var cardPlaces = {};
-var selectedCards = {};
+var cardPlaces;
+var selectedCards;
 var cardImages = {};
 var showPrev = false;
 var drawingCanvas = false;
@@ -91,6 +91,10 @@ function setMainService(service, roomname) {
     attachControl('begin game', function() {
         declareBeginGame(roomname);
     });
+
+    cache = {};
+    cardPlaces = {};
+    selectedCards = {};
 
     gameSocket.onopen = function() {
         sendMsg(gameSocket, ['HELLO', roomname, username]);
