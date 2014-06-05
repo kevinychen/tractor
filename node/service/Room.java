@@ -137,7 +137,7 @@ class Room
         knownCards = new HashMap<Integer, List<Card>>();
         for (Player player : game.getPlayers())
             knownCards.put(player.ID, new ArrayList<Card>());
-        knownCards.put(-1, game.getDeck());
+        knownCards.put(-1, new ArrayList<Card>());
 
         drawingCardsTimer = new Timer();
         final int DELAY_MILLIS = 200;
@@ -357,8 +357,8 @@ class Room
 
     private void announceCards(List<Card> cards)
     {
-        for (Player player : game.getPlayers())
-            knownCards.get(player.ID).addAll(cards);
+        for (List<Card> knownCardSet : knownCards.values())
+            knownCardSet.addAll(cards);
     }
 
     private String validateProperties()
