@@ -139,7 +139,8 @@ class Room
 
     void newRound(User user)
     {
-        if (!gameStarted || game.getState() != Game.State.AWAITING_RESTART)
+        if (!gameStarted || user.playerID == -1 ||
+                game.getState() != Game.State.AWAITING_RESTART)
         {
             sendError(user, "Invalid command.");
             return;

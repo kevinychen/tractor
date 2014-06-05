@@ -302,13 +302,21 @@ function drawGame() {
 
     // update game control button
     if (!game.state || game.state == 'AWAITING_RESTART') {
-        attachControl('new round', function() {
-            sendMsg(gameSocket, ['NEWROUND']);
-        });
+        if (cache.myIndex != -1) {
+            attachControl('new round', function() {
+                sendMsg(gameSocket, ['NEWROUND']);
+            });
+        } else {
+            $('#gamecontrol').hide();
+        }
     } else if (game.state == 'AWAITING_SHOW') {
-        attachControl('show', function() {
-            sendSelectedCardsMsg('SHOW');
-        });
+        if (cache.myIndex != -1) {
+            attachControl('show', function() {
+                sendSelectedCardsMsg('SHOW');
+            });
+        } else {
+            $('#gamecontrol').hide();
+        }
     } else if (game.state == 'AWAITING_KITTY') {
         if (cache.myIndex == game.master) {
             attachControl('make kitty', function() {
