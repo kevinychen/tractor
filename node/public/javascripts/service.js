@@ -375,7 +375,7 @@ function updateCardPositions() {
         setCardsGoal('deck', deck);
     }
     if (game.kitty) {
-        if (game.state == 'AWAITING_RESTART') {
+        if (game.state == 'AWAITING_RESTART' && !showPrev) {
             setCardsGoal('table', game.kitty);
         } else {
             setCardsGoal('out', game.kitty);
@@ -384,6 +384,8 @@ function updateCardPositions() {
     if (game.shown) {
         if (game.state == 'AWAITING_SHOW' || game.state == 'AWAITING_KITTY') {
             setCardsGoal('table', game.shown);
+        } else {
+            setCardsGoal('out', game.shown);
         }
     }
     if (game.hands) {
@@ -457,7 +459,7 @@ function drawCanvas() {
     ctx.restore();
 
     // draw show prev button
-    if (game.state == 'AWAITING_PLAY') {
+    if (game.state == 'AWAITING_PLAY' || game.state == 'AWAITING_RESTART') {
         ctx.save();
         ctx.font = '12px Arial';
         ctx.fillStyle = 'white';

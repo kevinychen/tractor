@@ -129,6 +129,11 @@ public class Game implements Serializable
         return properties;
     }
 
+    public int getRoundNum()
+    {
+        return roundNum;
+    }
+
     public Map<Integer, Integer> getPlayerScores()
     {
         return new HashMap<Integer, Integer>(playerScores);
@@ -246,6 +251,7 @@ public class Game implements Serializable
         while (!deck.isEmpty())
             hands.get(players.get(masterIndex).ID).addCard(
                     deck.remove(deck.size() - 1));
+        playerIndex = masterIndex;
 
         if (properties.find_a_friend)
         {
@@ -317,7 +323,7 @@ public class Game implements Serializable
 
         // If this is the first round, set the master to this player.
         if (roundNum == 0)
-            playerIndex = masterIndex = players.indexOf(getPlayerWithID(cards
+            masterIndex = players.indexOf(getPlayerWithID(cards
                     .getPlayerID()));
     }
 

@@ -280,7 +280,8 @@ class Room
             obj.put("master", game.getMaster().ID);
             obj.put("gameScores", gameScoresToJSON(game.getPlayerScores()));
 
-            if (game.getState() != Game.State.AWAITING_RESTART)
+            if (game.getRoundNum() != -1 ||
+                    game.getState() != Game.State.AWAITING_RESTART)
             {
                 obj.put("currPlayer", game.getCurrentPlayer().ID);
                 obj.put("deck", cardsToJSON(game.getDeck()));
