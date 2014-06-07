@@ -58,7 +58,7 @@ function joinRoom(room, callback) {
         if (data.error) {
             showMsg($('#roomerror'), data.error);
         } else {
-            setMainService(data.service, room);
+            setMainService(data.service, room, data.auth);
         }
         callback();
     });

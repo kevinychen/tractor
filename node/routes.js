@@ -61,12 +61,21 @@ exports.rooms = function(req, res) {
 };
 
 exports.join = function(req, res) {
-    model.joinRoom(req.session.username, req.body.roomname, function() {});
-    model.getService(req.body.roomname, function(err, service) {
-        res.json({error: err, service: service});
+    var user = req.session.username;
+    var room = req.body.roomname;
+    model.joinRoom(user, room, function() {});
+    model.getService(room, function(err, service, serviceKey) {
+        var auth = model.encodeMD5(room, serviceKey, user);
+        res.json({error: err, service: service, auth: auth});
     });
 };
 
 exports.leave = function(req, res) {
     model.joinRoom(req.session.username, '', function() {});
+};
+
+exports.service = function(req, res) {
+    model.addService(req.body, function(err) {
+        res.json({error: err});
+    });
 };

@@ -70,7 +70,7 @@ var showPrev = false;
 var drawingCanvas = false;
 var cache;
 
-function setMainService(service, roomname) {
+function setMainService(service, roomname, auth) {
     endMainService();
     gameSocket = new WebSocket('ws://' + service);
     if (gameSocket.readyState > 1) {  // CLOSED or CLOSING
@@ -125,7 +125,7 @@ function setMainService(service, roomname) {
     selectedCards = {};
 
     gameSocket.onopen = function() {
-        sendMsg(gameSocket, ['HELLO', roomname, username]);
+        sendMsg(gameSocket, ['HELLO', roomname, username, auth]);
     };
     gameSocket.onmessage = function(msg) {
         var data = JSON.parse(msg.data);

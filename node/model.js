@@ -1,4 +1,5 @@
 var config = require('./config').config;
+var crypto = require('crypto');
 var mysql = require('mysql2');
 var bcrypt = require('bcrypt');
 var url = 'mysql://' + config.db_host + ':3306/' + config.db_name +
@@ -25,32 +26,40 @@ function Model() {
                 'service varchar(64)' +
                 ')', [], c5);
     }, c5 = function() {
+        execute('drop table if exists services', [], c6);
+    }, c6 = function() {
+        execute('create table services (' +
+                'id int auto_increment primary key, ' +
+                'address varchar(64) unique, ' +
+                'serviceKey varchar(64)' +
+                ')', [], c7);
+    }, c7 = function() {
     };
     c1();
 }
 
 function execute(query, args, callback) {
-  pool.getConnection(function(err, connection) {
-    if (err) {
-      callback(err);
-    } else {
-      connection.query(query, args, function(err, rows, fields) {
-        connection.release();
-        callback(err, rows, fields);
-      });
-    }
-  });
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            callback(err);
+        } else {
+            connection.query(query, args, function(err, rows, fields) {
+                connection.release();
+                callback(err, rows, fields);
+            });
+        }
+    });
 }
 
 Model.prototype.getUser = function(username, callback) {
-  execute('select * from users where username=?',
-      [username], function(err, rows) {
-        if (err || rows.length == 0) {
-          callback('Error obtaining user.');
-        } else {
-          callback(err, rows[0]);
-        };
-      });
+    execute('select * from users where username=?',
+        [username], function(err, rows) {
+            if (err || rows.length == 0) {
+                callback('Error obtaining user.');
+            } else {
+                callback(err, rows[0]);
+            };
+        });
 }
 
 Model.prototype.validateRegistration = function(username, password, callback) {
@@ -96,27 +105,47 @@ Model.prototype.getRooms = function(callback) {
     execute('select roomname, service from rooms', [], callback);
 }
 
-Model.prototype.getService = function(roomname, callback) {
-    execute('select service from rooms where roomname=?',
-            [roomname], function(err, room) {
-                if (err) {
-                    callback(err);
-                } else if (room.length == 0) {
-                    var index = Math.floor(Math.random() * config.services.length);
-                    var service = config.services[index];
-                    execute('insert into rooms (roomname, service) values (?)',
-                        [[roomname, service]], function(err) {
-                            callback(err, service);
-                        });
-                } else {
-                    callback(false, room[0].service);
-                }
-            });
-}
-
 Model.prototype.joinRoom = function(username, roomname, callback) {
     execute('update users set room=? where username=?',
             [roomname, username], callback);
+}
+
+Model.prototype.getService = function(roomname, callback) {
+    execute('insert ignore into rooms (roomname, service) values (?, ' +
+                '(select address from services order by rand() limit 1))',
+            [roomname], function(err) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                execute('select service, serviceKey from services left join ' +
+                    'rooms on services.address = rooms.service where ' +
+                    'roomname = ?', [roomname], function(err, rows) {
+                        if (err || rows.length == 0) {
+                            callback('System error.');
+                        } else {
+                            callback(false, rows[0].service,
+                                rows[0].serviceKey);
+                        }
+                    });
+            });
+}
+
+Model.prototype.addService = function(params, callback) {
+    if (params.masterKey != config.masterKey) {
+        callback('Error: incorrect master key.');
+        return;
+    }
+    execute('insert ignore into services (address, serviceKey) values (?)',
+            [[params.address, params.serviceKey]], callback);
+}
+
+Model.prototype.encodeMD5 = function(message) {
+    var cipher = crypto.createHash('md5');
+    for (var i = 0; i < arguments.length; i++) {
+        cipher.update(arguments[i]);
+    }
+    return cipher.digest('hex');
 }
 
 Model.prototype.emit = function(title, data) {
