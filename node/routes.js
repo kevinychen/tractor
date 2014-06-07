@@ -1,4 +1,27 @@
 var model = require('./model').Model;
+var fs = require('fs');
+
+var adverbs = []
+var adjectives = []
+var animals = []
+loadWords();
+
+function loadWords() {
+    var advStr = fs.readFileSync('misc/adverbs', {encoding: 'utf8'});
+    adverbs = advStr.toString().split("\n");
+    var adjStr = fs.readFileSync('misc/adjectives', {encoding: 'utf8'});
+    adjectives = adjStr.toString().split("\n");
+    var animalStr = fs.readFileSync('misc/animals', {encoding: 'utf8'});
+    animals = animalStr.toString().split("\n");
+}
+
+function getRandomUsername() {
+    var username = "";
+    username += adverbs[Math.floor(Math.random() * adverbs.length)];
+    username += adjectives[Math.floor(Math.random() * adjectives.length)];
+    username += animals[Math.floor(Math.random() * animals.length)];
+    return username;
+}
 
 exports.home = function(req, res) {
     var complete = function() {
@@ -9,7 +32,7 @@ exports.home = function(req, res) {
     };
     // Create guest username, if not logged in
     if (!req.session.username) {
-        var guestId = 'guest' + Math.floor(Math.random() * 1000000000);
+        var guestId = getRandomUsername();
         req.session.username = guestId;
         req.session.isGuest = true;
         model.register(guestId, '', complete);

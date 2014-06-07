@@ -12,7 +12,7 @@ function Model() {
     }, c2 = function() {
         execute('create table users (' +
                     'id int auto_increment primary key, ' +
-                    'username varchar(16), ' +
+                    'username varchar(64), ' +
                     'password varchar(64), ' +
                     'room varchar(64), ' +
                     'online int' +
